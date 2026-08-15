@@ -14,6 +14,10 @@ npm i
 npm run dev
 ```
 
+Copy `.env.example` to `.env` and fill in the required values for local development.
+For a Netlify deployment, add the same values in the site's environment-variable
+settings; never commit a populated `.env` file.
+
 ## Built with
 
 - TanStack Start

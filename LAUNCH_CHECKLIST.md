@@ -108,6 +108,8 @@ Netlify dashboard → your site → **Site configuration → Environment variabl
 SUPABASE_URL=                     ← from Step 1
 SUPABASE_PUBLISHABLE_KEY=         ← from Step 1
 SUPABASE_SERVICE_ROLE_KEY=        ← from Step 1
+VITE_SUPABASE_URL=                ← same value as SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY=    ← same value as SUPABASE_PUBLISHABLE_KEY
 
 AI_GATEWAY_API_KEY=               ← from Step 2
 AI_GATEWAY_BASE_URL=https://api.groq.com/openai/v1   ← if using Groq

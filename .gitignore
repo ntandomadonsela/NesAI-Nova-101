@@ -1,0 +1,14 @@
+# Dependencies and generated build output
+node_modules/
+dist/
+.output/
+.vinxi/
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+
+# Local tooling
+.netlify/
+*.log
