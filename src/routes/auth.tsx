@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { GraduationCap } from "lucide-react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -70,10 +69,8 @@ function AuthPage() {
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <GraduationCap className="h-5 w-5" />
-            </div>
-            <span className="font-serif text-xl font-semibold">NesAI Nova</span>
+            <img src="/nesai-symbol.png" alt="" className="h-10 w-10 object-contain" />
+            <span className="font-serif text-xl font-semibold">NesAI</span>
           </Link>
 
           <div className="paper-card p-8">

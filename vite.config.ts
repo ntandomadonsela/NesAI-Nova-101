@@ -4,18 +4,18 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import netlify from "@netlify/vite-plugin-tanstack-start";
+import { nitro } from "nitro/vite";
 
-// TanStack Start + Tailwind v4, deploying to Netlify.
-// The Netlify plugin wires up Nitro's Netlify preset for you (SSR routes,
-// server functions and middleware all run as Netlify serverless functions)
-// and, in local dev, emulates the Netlify platform (env vars, redirects,
-// headers) so `npm run dev` behaves like production.
+// Vercel builds use Nitro's Vercel preset. Keep the existing Netlify adapter
+// for local and Netlify builds so the current deployment path remains usable.
+const deploymentAdapter = process.env.VERCEL ? nitro() : netlify();
+
 export default defineConfig({
   plugins: [
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart(),
-    netlify(),
+    deploymentAdapter,
     viteReact(),
   ],
   resolve: {

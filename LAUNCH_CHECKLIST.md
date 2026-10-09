@@ -1,4 +1,4 @@
-# NesAI Nova — Launch Checklist
+# NesAI — Vercel Launch Checklist
 
 Follow this top to bottom. Each step says exactly where to click and what to paste.
 Nothing here is optional — skipping a step is almost always why "it's not working."
@@ -7,8 +7,8 @@ Nothing here is optional — skipping a step is almost always why "it's not work
 
 ## ✅ Already done for you in this codebase
 - Lovable fully removed (no dependency on their platform or account)
-- Netlify build configured correctly (`netlify.toml`, `dist/public`, npm)
-- Favicon set to your open-book "N | N" logo
+- Vercel build configured with Nitro and the TanStack Start framework preset
+- NesAI logo mark installed as the app favicon
 - "Owned and managed by Nesma Holdings (Pty) Ltd" on the site footer
 
 Everything below is the setup work only *you* can do, because it requires your own
@@ -34,7 +34,7 @@ accounts and secrets.
    - **service_role key** (click "Reveal") → this is `SUPABASE_SERVICE_ROLE_KEY`
 
 > ⚠️ The service role key bypasses all security rules. Never put it in code you commit
-> to GitHub — it only ever goes into Netlify's environment variables (Step 5).
+> to GitHub — it only ever goes into Vercel's server-side environment variables (Step 5).
 
 ---
 
@@ -43,7 +43,7 @@ accounts and secrets.
 **Groq** (recommended — genuinely free, no credit card, ever):
 1. Go to **console.groq.com** → sign up with email/Google/GitHub.
 2. **API Keys** → **Create API Key** → copy it. This is `AI_GATEWAY_API_KEY`.
-3. You also need two more variables (all three go in Netlify together, Step 5):
+3. You also need two more variables (all three go in Vercel together, Step 5):
    ```
    AI_GATEWAY_BASE_URL=https://api.groq.com/openai/v1
    AI_GATEWAY_MODEL=llama-3.3-70b-versatile
@@ -99,10 +99,10 @@ once everything works.
 
 ---
 
-## Step 5 — Netlify environment variables — ~5 minutes
+## Step 5 — Vercel environment variables — ~5 minutes
 
-Netlify dashboard → your site → **Site configuration → Environment variables** →
-**Add a variable**, one at a time. Paste in every value you collected in Steps 1–3:
+Vercel dashboard → your project → **Settings → Environment Variables** → add each
+value collected in Steps 1–3 to the **Preview** and **Production** environments:
 
 ```
 SUPABASE_URL=                     ← from Step 1
@@ -121,20 +121,25 @@ PAYPAL_CLIENT_SECRET=             ← from Step 3
 PAYPAL_WEBHOOK_ID=                ← from Step 3
 VITE_PAYPAL_CLIENT_ID=            ← same value as PAYPAL_CLIENT_ID
 VITE_PAYPAL_PLAN_ID=              ← from Step 3
+LEADS_WEBHOOK_URL=                ← optional, private contact-form destination
 ```
 
-After adding these: **Deploys** tab → **Trigger deploy** → **Deploy site**.
+Also add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` using the same values
+as the server Supabase variables above. Import the Git repository in Vercel and deploy a
+Preview first. Redeploy whenever you change environment values.
 
 ---
 
 ## Step 6 — Connect your domain — ~5 minutes + up to 1 hour waiting
 
-1. Netlify → **Site configuration → Domain management → Add a domain**.
-2. Enter your domain. Netlify tells you exactly what DNS record to add (either an
+1. Vercel → **Project → Settings → Domains → Add**.
+2. Enter your domain. Vercel tells you exactly what DNS record to add (either an
    A record for a root domain like `nesainova.com`, or a CNAME for a subdomain like
    `app.nesainova.com`).
 3. Go to wherever you bought the domain, add that exact record.
-4. Wait — usually 10–60 minutes for it to activate and get HTTPS automatically.
+4. Wait for DNS to propagate; Vercel provisions HTTPS after it verifies the records.
+5. In Supabase Auth → URL Configuration, set the production Site URL and allow the
+   production domain, the Vercel Preview URL pattern, and your local development URL.
 
 ---
 
@@ -156,7 +161,7 @@ After adding these: **Deploys** tab → **Trigger deploy** → **Deploy site**.
 
 Go through this list on the real, live site:
 
-- [ ] Sign up as a new student — do you land on the Vault?
+- [ ] Sign up as a new student — do you land on the Study Desk?
 - [ ] Sign out, sign back in — does it remember you?
 - [ ] Browse the Vault — do resources show up? (You'll need to upload some first — see
       the admin step below)
@@ -166,7 +171,7 @@ Go through this list on the real, live site:
 - [ ] Go to **Upgrade** → subscribe using a PayPal **sandbox** buyer account → does your
       profile flip to Premium?
 - [ ] Cancel that sandbox subscription → does Premium turn back off?
-- [ ] Once all of the above pass: switch `PAYPAL_ENV` to `live` in Netlify, swap in your
+- [ ] Once all of the above pass: switch `PAYPAL_ENV` to `live` in Vercel, swap in your
       live PayPal credentials, redeploy, and do **one real small test payment yourself**
       before announcing launch.
 
@@ -174,6 +179,6 @@ Go through this list on the real, live site:
 
 ## If something breaks
 
-Netlify → **Deploys** → click the failed one → read the log (scroll to the first red
-line, not just the bottom). Paste that error to me and I'll tell you exactly what's
-wrong — this is much faster than guessing.
+Vercel → **Project → Deployments** → open the failed deployment and inspect its build or
+function logs. Start with the first error, then check that all required environment
+variables are assigned to the correct Preview or Production environment.

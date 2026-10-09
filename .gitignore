@@ -11,4 +11,5 @@ dist/
 
 # Local tooling
 .netlify/
+.vercel/
 *.log

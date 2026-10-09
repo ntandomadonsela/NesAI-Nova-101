@@ -1,167 +1,40 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SiteNav } from "@/components/site-nav";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Sparkles, ShieldCheck, Library, Scale, Sigma } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, Check, ChevronRight, GraduationCap, Library, Menu, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "NesAI Nova — The Digital Library & AI Tutor for Serious Students" },
-      {
-        name: "description",
-        content:
-          "Curated past papers, memos and study notes for High School and University — paired with a Socratic AI copilot that tutors you on the exact material you're studying.",
-      },
-    ],
-  }),
-  component: Landing,
+  head: () => ({ meta: [{ title: "NesAI — Intelligence, deployed at scale" }, { name: "description", content: "Your personal AI study partner. Get clear, step-by-step help across subjects, exam papers and study notes." }] }),
+  component: HomePage,
 });
 
-function Landing() {
-  return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
+const subjects = ["Mathematics", "Physical sciences", "Commerce", "Law", "Humanities", "Study skills"];
+const tools = [
+  { icon: BrainCircuit, title: "Tutoring that gets you", text: "Ask a question, explore the steps, and keep going until the idea clicks." },
+  { icon: Library, title: "A library built for exams", text: "Find past papers, memos and notes, then bring any resource into your study chat." },
+  { icon: Zap, title: "Your pace. Your plan.", text: "Get focused support whenever you study, with tutors for the subjects you care about." },
+];
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,theme(colors.amber.100/40),transparent_60%)]" />
-        <div className="mx-auto max-w-6xl px-6 pb-24 pt-20 md:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground shadow-editorial">
-              <Sparkles className="h-3.5 w-3.5 text-[var(--color-gold)]" />
-              A digital library and a personal study desk.
-            </div>
-            <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-foreground md:text-7xl">
-              Study the way top scholars do — a{" "}
-              <span className="italic text-[var(--color-gold)]">rigorous library</span> paired with
-              a patient tutor.
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              NesAI Nova brings together past exam papers, memos and study notes, paired with a
-              subject-specialist study companion that walks you through the exact material you're
-              revising.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
-              >
-                <Link to="/vault">
-                  Explore the Vault <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/chat">Open the Study Desk</Link>
-              </Button>
-            </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5" /> Bank-grade security
-              </span>
-              <span>·</span>
-              <span>CAPS · IEB · University</span>
-              <span>·</span>
-              <span>Built for South African learners</span>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Feature grid */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              icon: Library,
-              title: "The Resource Vault",
-              body: "A meticulously organized archive of past papers, official memos, summaries and study notes — filter by level, curriculum, subject and year.",
-            },
-            {
-              icon: Sparkles,
-              title: "Specialist Study Desk",
-              body: "Subject-specific tutors for Math, Sciences, Law, Commerce and more. Renders LaTeX equations, IRAC arguments and code natively — like a top TA at your desk.",
-            },
-            {
-              icon: BookOpen,
-              title: "Open a paper, ask a question",
-              body: "Every document has a one-click bridge to the Study Desk with the paper pre-loaded as context. No copy-pasting.",
-            },
-
-          ].map((f, i) => (
-            <div key={i} className="paper-card p-7">
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
-                <f.icon className="h-5 w-5 text-[var(--color-gold)]" />
-              </div>
-              <h3 className="font-serif text-xl">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Subjects strip */}
-      <section className="border-y border-border bg-card">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <div className="text-center">
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Specialist tutors
-            </div>
-            <h2 className="mt-2 font-serif text-3xl md:text-4xl">Six tutors. One study desk.</h2>
-
-          </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {[
-              { icon: Sigma, name: "Math Tutor", tag: "Socratic method" },
-              { icon: BookOpen, name: "Sciences Tutor", tag: "Given/Required/Formula" },
-              { icon: Scale, name: "Law Tutor", tag: "IRAC formatting" },
-              { icon: Library, name: "Commerce Tutor", tag: "Journals & T-accounts" },
-              { icon: BookOpen, name: "Humanities Tutor", tag: "Essay coaching" },
-              { icon: Sparkles, name: "Study Coach", tag: "Exam strategy" },
-            ].map((s) => (
-              <div
-                key={s.name}
-                className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3"
-              >
-                <s.icon className="h-5 w-5 text-[var(--color-gold)]" />
-                <div>
-                  <div className="font-medium">{s.name}</div>
-                  <div className="text-xs text-muted-foreground">{s.tag}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-        <h2 className="font-serif text-4xl md:text-5xl">Ready to study, refined?</h2>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Free to start. Five tutor questions a day, unlimited paper downloads.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button
-            asChild
-            size="lg"
-            className="bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
-          >
-            <Link to="/auth">Create your free account</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/vault">Browse the Vault</Link>
-          </Button>
-        </div>
-      </section>
-
-      <footer className="border-t border-border py-10 text-center text-xs text-muted-foreground">
-        <div>© {new Date().getFullYear()} NesAI Nova. Study, refined.</div>
-        <div className="mt-1.5 tracking-wide">
-          Owned and operated by <span className="font-medium text-foreground/70">Nesma Holdings (Pty) Ltd</span>.
-        </div>
-      </footer>
-
-    </div>
-  );
+function HomePage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return <div className="nesai-home">
+    <header className="nesai-header"><div className="nesai-wrap header-inner">
+      <Link to="/" className="brand-lockup" aria-label="NesAI home"><img src="/nesai-symbol.png" alt="" /><span>Nes<span>AI</span><small>INTELLIGENCE, DEPLOYED AT SCALE</small></span></Link>
+      <button className="mobile-menu" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
+      <nav className={menuOpen ? "main-nav is-open" : "main-nav"}>
+        <a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a><a href="#subjects" onClick={() => setMenuOpen(false)}>Subjects</a><Link to="/vault" onClick={() => setMenuOpen(false)}>Resource vault</Link>
+        <Link to="/auth" className="nav-signin" onClick={() => setMenuOpen(false)}>Sign in</Link><Link to="/auth" className="nav-cta" onClick={() => setMenuOpen(false)}>Start learning <ArrowRight size={15} /></Link>
+      </nav>
+    </div></header>
+    <main>
+      <section className="nesai-hero"><div className="hero-orb orb-one"/><div className="hero-orb orb-two"/><div className="nesai-wrap hero-grid">
+        <div className="hero-copy"><div className="hero-kicker"><span className="live-dot"/> YOUR NEXT BREAKTHROUGH STARTS HERE</div><h1>Make room for<br/><span>the “aha” moment.</span></h1><p className="hero-lead">Meet your AI study partner. Get unstuck, understand the why, and move forward with confidence.</p><div className="hero-buttons"><Link to="/auth" className="primary-button">Start learning for free <ArrowRight size={17}/></Link><Link to="/vault" className="secondary-button"><BookOpen size={17}/> Explore the resource vault</Link></div><div className="hero-proof"><div className="proof-icon"><ShieldCheck size={16}/></div><span>Built for curious minds. Ready when you are.</span></div></div>
+        <div className="hero-visual"><div className="visual-glow"/><div className="study-card"><div className="study-card-top"><div className="mini-brand"><img className="mini-mark" src="/nesai-symbol.png" alt="NesAI logo"/><span>NesAI <small>STUDY DESK</small></span></div><span className="online-status"><i/> ONLINE</span></div><div className="card-rule"/><div className="tutor-label"><span className="tutor-avatar"><GraduationCap size={18}/></span><div><strong>Your Math Tutor</strong><small>Ready to work it through with you</small></div><Sparkles className="sparkle-icon" size={18}/></div><div className="chat-bubble tutor-bubble">Let’s solve this one together. What have you tried so far?</div><div className="chat-bubble learner-bubble">Can you explain the quadratic formula?</div><div className="answer-card"><div className="answer-heading"><span className="answer-check"><Check size={13}/></span> Start with the standard form</div><p>For <b>ax² + bx + c = 0</b>, the solutions are:</p><div className="equation">x = <span>−b ± √(b² − 4ac)</span><i>2a</i></div><div className="answer-hint"><Sparkles size={13}/> We’ll break down each part next.</div></div><div className="composer-preview"><span>Ask a follow-up…</span><span className="send-circle"><ArrowRight size={15}/></span></div></div><div className="floating-note"><span className="note-icon"><Check size={15}/></span><span><b>One step at a time</b><small>Learning that sticks</small></span></div><div className="float-spark">✦</div></div>
+      </div><div className="hero-bottom nesai-wrap"><span>PERSONALIZED SUPPORT</span><span className="bottom-line"/><span>MADE FOR THE WAY YOU LEARN</span></div></section>
+      <section className="trust-strip"><div className="nesai-wrap trust-inner"><span>ONE STUDY SPACE, READY FOR</span>{subjects.slice(0,5).map(s=><b key={s}>{s}</b>)}</div></section>
+      <section className="platform-section nesai-wrap" id="platform"><div className="section-intro"><div className="section-kicker">A SMARTER WAY TO STUDY</div><h2>Big questions.<br/><span>Clear next steps.</span></h2><p>Bring your curiosity. NesAI helps turn the hard bits into progress you can feel.</p><Link to="/auth" className="inline-link">Meet your study partner <ArrowRight size={16}/></Link></div><div className="feature-stack">{tools.map((item,i)=>{const Icon=item.icon;return <article className="feature-card" key={item.title}><div className="feature-number">0{i+1}</div><div className="feature-icon"><Icon size={21}/></div><div><h3>{item.title}</h3><p>{item.text}</p></div><ChevronRight className="feature-arrow" size={19}/></article>})}</div></section>
+      <section className="subject-section" id="subjects"><div className="nesai-wrap subject-layout"><div><div className="section-kicker">YOUR SUBJECTS, YOUR WAY</div><h2>Every subject has<br/>a <span>starting point.</span></h2><p>Choose a specialist tutor and start with the question in front of you.</p></div><div className="subject-grid">{subjects.map((s,i)=><Link to="/chat" search={{agent:["math","science","commerce","law","humanities","general"][i]}} className="subject-pill" key={s}><span className="subject-index">0{i+1}</span>{s}<ArrowRight size={15}/></Link>)}</div></div></section>
+      <section className="cta-section"><div className="nesai-wrap cta-panel"><div className="cta-spark">✦</div><div className="section-kicker">YOUR STUDY DESK IS WAITING</div><h2>Let’s make sense<br/>of <span>what’s next.</span></h2><p>Sign in to pick up where you left off, or create your free account and ask your first question.</p><Link to="/auth" className="primary-button">Get started <ArrowRight size={17}/></Link><div className="cta-decoration"/></div></section>
+    </main>
+    <footer className="nesai-footer"><div className="nesai-wrap footer-main"><Link to="/" className="footer-logo"><img src="/nesai-symbol.png" alt=""/><span>Nes<span>AI</span></span></Link><p>Intelligence, deployed at scale.</p><div className="footer-links"><Link to="/vault">Resource vault</Link><Link to="/upgrade">Premium</Link><Link to="/auth">Sign in</Link></div></div><div className="nesai-wrap footer-bottom"><span>© {new Date().getFullYear()} NesAI. Learn something new today.</span><span>Built for learners, everywhere.</span></div></footer>
+  </div>
 }

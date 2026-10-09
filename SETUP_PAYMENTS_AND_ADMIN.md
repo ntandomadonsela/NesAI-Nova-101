@@ -65,26 +65,29 @@ VITE_PAYPAL_CLIENT_ID=...         # same value as PAYPAL_CLIENT_ID, exposed to t
 VITE_PAYPAL_PLAN_ID=...
 ```
 
-### B. Deploying to Netlify
-This project is configured to deploy on Netlify out of the box (`vite.config.ts` uses
-`@netlify/vite-plugin-tanstack-start`, and `netlify.toml` sets the build command).
+### B. Deploying to Vercel
+This project uses Nitro's Vercel preset when Vercel builds it. `vercel.json` selects the
+TanStack Start framework preset, and `vite.config.ts` chooses the Nitro adapter when the
+`VERCEL` build environment is present.
 
-1. Push this repo to GitHub.
-2. In Netlify: **Add new project → Import an existing project** → pick the GitHub repo.
-   Netlify will detect the build settings from `netlify.toml` automatically
-   (`npm run build`, publish `dist/public`) — you shouldn't need to change anything.
-3. Before the first deploy, go to **Site configuration → Environment variables** and add
-   every variable listed above (Supabase, AI gateway, PayPal). Do this in the Netlify
-   dashboard, never commit them to the repo.
-4. Trigger a deploy. SSR pages, `/api/*` routes and server functions all run as Netlify
-   Functions automatically — there's nothing extra to configure for that.
-5. **Custom domain**: Site configuration → Domain management → Add a domain. Netlify
-   gives you either an apex/A-record setup or a CNAME, depending on whether you're using
-   the domain's root (`nesainova.com`) or a subdomain (`app.nesainova.com`). Add that
-   record with your domain registrar; Netlify provisions HTTPS automatically once DNS
-   propagates (usually under an hour).
-6. Every push to your main branch redeploys automatically after this; pull requests get
-   their own preview URL for testing changes before they go live.
+1. Push this repo to GitHub, GitLab, or Bitbucket.
+2. In Vercel, choose **Add New → Project**, import the repository, and keep its root
+   directory as the Vercel project root. Keep the detected **TanStack Start** preset and
+   default `npm run build` command.
+3. Add the variables from `.env.example` under **Project → Settings → Environment
+   Variables**. Set public `VITE_` values and server-only values for Preview and
+   Production as appropriate. Never commit secrets to the repository.
+4. Deploy a Preview first. Configure Supabase Auth's site URL and allowed redirect URLs
+   for your production domain, Vercel Preview domains, and local development URL.
+5. Verify sign-in, tutor chat, Vault access, admin ingestion, and PayPal sandbox checkout
+   on the Preview URL. Check function logs for missing variables before promoting.
+6. Add a custom domain under **Project → Settings → Domains**. Set the production domain
+   as the Supabase Auth site URL and keep the Vercel Preview URLs in its redirect allowlist.
+   Every push to the production branch then creates a production deployment; other branches
+   create Preview deployments.
+
+The Netlify adapter remains available as an alternative: its settings are in `netlify.toml`
+and `vite.config.ts` selects it when `VERCEL` is not set.
 
 ### C. PayPal setup (~15 minutes)
 1. Go to [developer.paypal.com](https://developer.paypal.com/dashboard/) and log in with

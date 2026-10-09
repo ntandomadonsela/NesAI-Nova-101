@@ -16,6 +16,7 @@ import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as AdminUploadRouteImport } from './routes/admin/upload'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiLeadsRouteImport } from './routes/api/leads'
 import { Route as ApiAdminIngestRouteImport } from './routes/api/admin/ingest'
 import { Route as ApiPaymentsPaypalSubscribeRouteImport } from './routes/api/payments/paypal-subscribe'
 import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payments/paypal-webhook'
@@ -55,6 +56,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLeadsRoute = ApiLeadsRouteImport.update({
+  id: '/api/leads',
+  path: '/api/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminIngestRoute = ApiAdminIngestRouteImport.update({
   id: '/api/admin/ingest',
   path: '/api/admin/ingest',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/leads': typeof ApiLeadsRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/leads': typeof ApiLeadsRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/leads': typeof ApiLeadsRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
+    | '/api/leads'
     | '/api/admin/ingest'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
+    | '/api/leads'
     | '/api/admin/ingest'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
+    | '/api/leads'
     | '/api/admin/ingest'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   VaultRoute: typeof VaultRoute
   AdminUploadRoute: typeof AdminUploadRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiLeadsRoute: typeof ApiLeadsRoute
   ApiAdminIngestRoute: typeof ApiAdminIngestRoute
   ApiPaymentsPaypalSubscribeRoute: typeof ApiPaymentsPaypalSubscribeRoute
   ApiPaymentsPaypalWebhookRoute: typeof ApiPaymentsPaypalWebhookRoute
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/leads': {
+      id: '/api/leads'
+      path: '/api/leads'
+      fullPath: '/api/leads'
+      preLoaderRoute: typeof ApiLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/ingest': {
       id: '/api/admin/ingest'
       path: '/api/admin/ingest'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   VaultRoute: VaultRoute,
   AdminUploadRoute: AdminUploadRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiLeadsRoute: ApiLeadsRoute,
   ApiAdminIngestRoute: ApiAdminIngestRoute,
   ApiPaymentsPaypalSubscribeRoute: ApiPaymentsPaypalSubscribeRoute,
   ApiPaymentsPaypalWebhookRoute: ApiPaymentsPaypalWebhookRoute,

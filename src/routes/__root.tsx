@@ -14,6 +14,10 @@ import { reportError } from "../lib/error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
+  useEffect(() => {
+    if (window.location.pathname === "/**") window.location.replace("/");
+  }, []);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -27,7 +31,7 @@ function NotFoundComponent() {
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
-            Back to NesAI Nova
+            Back to NesAI
           </Link>
         </div>
       </div>
@@ -76,30 +80,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NesAI Nova — Past Papers & AI Study Copilot" },
+      { title: "NesAI — Intelligence, deployed at scale" },
       {
         name: "description",
         content:
-          "A prestigious digital library of past exam papers, memos, and study notes — paired with a Socratic AI tutor for High School and University students.",
+          "Your personal AI study partner. Get clear, step-by-step help across subjects, exam papers and study notes.",
       },
-      { name: "author", content: "NesAI Nova" },
-      { property: "og:title", content: "NesAI Nova — Past Papers & AI Study Copilot" },
+      { name: "author", content: "NesAI" },
+      { property: "og:title", content: "NesAI — Intelligence, deployed at scale" },
       {
         property: "og:description",
         content:
-          "Curated past papers, memos and notes with an integrated AI tutor. Study smarter with NesAI Nova.",
+          "A personal AI study partner for clearer learning, exam preparation and step-by-step support.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/nesai-favicon.png", type: "image/png", sizes: "128x128" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap",
       },
     ],
   }),
