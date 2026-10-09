@@ -160,3 +160,227 @@
 .nesai-footer{background:#fff;color:#101a39}.nesai-footer .footer-main>p{color:#66718e}.nesai-footer .footer-links a{color:#56617e}.nesai-footer .footer-links a:hover{color:#2868e8}.nesai-footer .footer-bottom{border-top-color:#e7eaf1;color:#8490a8}.nesai-footer .footer-logo{color:#101a39}.nesai-footer .footer-logo>span{color:#101a39}.nesai-footer .footer-logo>span>span{background:linear-gradient(100deg,#078cf7,#5d27eb);background-clip:text;-webkit-background-clip:text;color:transparent}
 .study-card .mini-brand img.mini-mark{display:block;width:35px;height:35px;object-fit:contain;flex:0 0 35px;border-radius:8px;background:#fff}
 @media(max-width:640px){.brand-lockup>img{width:37px;height:46px}.brand-lockup{font-size:20px}.brand-lockup small{font-size:5px}.app-brand img{height:43px;width:34px}}
+
+/* Readable type scale across the public site and account flow. */
+.nesai-home {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.main-nav > a {
+  font-size: 14px;
+}
+
+.main-nav .nav-cta,
+.primary-button,
+.secondary-button {
+  font-size: 15px;
+}
+
+.hero-kicker,
+.section-kicker {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hero-copy h1 {
+  font-size: clamp(58px, 6.3vw, 86px);
+  line-height: 1.04;
+}
+
+.hero-lead {
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.hero-proof {
+  font-size: 13px;
+}
+
+.hero-bottom {
+  font-size: 10px;
+}
+
+.trust-inner > span,
+.trust-inner b {
+  font-size: 12px;
+}
+
+.section-intro > p,
+.subject-layout > div > p,
+.cta-panel > p {
+  font-size: 16px;
+}
+
+.inline-link,
+.footer-links a {
+  font-size: 14px;
+}
+
+.feature-card {
+  min-height: 132px;
+}
+
+.feature-card h3 {
+  font-size: 18px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.subject-pill {
+  min-height: 60px;
+  font-size: 14px;
+}
+
+.footer-main > p {
+  font-size: 14px;
+}
+
+.footer-bottom {
+  font-size: 11px;
+}
+
+.study-card .mini-brand {
+  font-size: 14px;
+}
+
+.study-card .mini-brand small,
+.study-card .online-status,
+.study-card .tutor-label small,
+.floating-note small {
+  font-size: 10px;
+}
+
+.study-card .tutor-label strong,
+.study-card .answer-heading {
+  font-size: 13px;
+}
+
+.study-card .chat-bubble,
+.study-card .answer-card p,
+.study-card .answer-hint,
+.study-card .composer-preview {
+  font-size: 12px;
+}
+
+.auth-card {
+  padding: 2rem;
+}
+
+.auth-title {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.auth-description,
+.auth-card label,
+.auth-card input,
+.auth-card select,
+.auth-card button[type="submit"],
+.auth-card .text-center {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.auth-card input,
+.auth-card select {
+  min-height: 3rem;
+}
+
+.auth-card button[type="submit"] {
+  min-height: 3.25rem;
+}
+
+.auth-config-notice,
+.auth-confirmation {
+  margin-top: 1.25rem;
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.auth-config-notice {
+  border: 1px solid #f2d18b;
+  background: #fff8e8;
+  color: #75520c;
+}
+
+.auth-confirmation {
+  border: 1px solid #b7e5d2;
+  background: #eefaf4;
+  color: #155f42;
+}
+
+@media (max-width: 850px) {
+  .trust-inner b {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-nav.is-open > a {
+    font-size: 16px;
+  }
+
+  .hero-kicker,
+  .section-kicker {
+    font-size: 11px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(52px, 12vw, 68px);
+  }
+
+  .hero-lead {
+    font-size: 17px;
+  }
+
+  .hero-buttons > a {
+    min-height: 54px;
+    font-size: 15px;
+  }
+
+  .hero-bottom {
+    font-size: 8px;
+  }
+
+  .trust-inner b {
+    font-size: 11px;
+  }
+
+  .section-intro > p,
+  .subject-layout > div > p,
+  .cta-panel > p {
+    font-size: 16px;
+  }
+
+  .feature-card h3 {
+    font-size: 16px;
+  }
+
+  .feature-card p {
+    font-size: 13px;
+  }
+
+  .subject-pill {
+    min-height: 56px;
+    height: auto;
+    font-size: 12px;
+  }
+
+  .footer-links a {
+    font-size: 13px;
+  }
+
+  .footer-bottom {
+    font-size: 11px;
+  }
+
+  .auth-card {
+    padding: 1.5rem;
+  }
+}

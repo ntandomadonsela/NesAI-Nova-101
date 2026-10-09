@@ -52,7 +52,7 @@ The AI, Supabase, and PayPal values come from those providers' project/app setti
 ### Service setup required before launch
 
 - **Supabase database:** run every SQL migration in `supabase/migrations/` in filename order. The latest migration creates the Vault tables, document chunks, and the public-read/admin-write `resource-files` storage bucket.
-- **Supabase Auth:** set the production Site URL to your deployed domain, then allow the production URL, your Vercel preview URL pattern, and local development URL under redirect URLs. Email confirmation links must return to the deployment that initiated sign-up.
+- **Supabase Auth:** set the production Site URL to your deployed domain, then allow the production URL, your Vercel preview URL pattern, and local development URL under redirect URLs. Add `/auth?redirect=%2Fchat` for each hostname (or a matching `/auth*` pattern) so email confirmation returns users to sign-in and then opens their study desk.
 - **Supabase admin:** after creating your account, assign its user UUID the `admin` role in `public.user_roles` to access `/admin/upload`.
 - **AI provider:** add `AI_GATEWAY_API_KEY`; the chat route returns a configuration error until a provider key is present.
 - **PayPal:** leave `PAYPAL_ENV=sandbox` and use sandbox credentials and a sandbox plan while verifying checkout and webhook flows. Configure the webhook endpoint as `https://<your-domain>/api/payments/paypal-webhook`. Switch all PayPal credentials, plan, webhook ID, and `PAYPAL_ENV=live` together only when ready for real payments.
