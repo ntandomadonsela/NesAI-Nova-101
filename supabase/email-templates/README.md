@@ -27,6 +27,20 @@ address or deliver email by itself.
 6. Save the settings and request a new confirmation email from the sign-up page.
    Check the email provider's delivery log if the message still does not arrive.
 
+## Logo in the email and logo beside the sender
+
+The confirmation email body uses the full NesAI logo at
+`{{ .SiteURL }}/nesai-logo.png`. The image must load over HTTPS without a login,
+and the Supabase Site URL must be the public website origin. Some recipients may
+need to allow remote images in their email app before seeing it.
+
+The small sender image shown beside a message in an inbox is separate from the
+email HTML. To request that mailbox providers show a brand logo, configure BIMI
+for the verified sending domain: align SPF/DKIM with DMARC, publish a BIMI DNS
+record that points to a public SVG Tiny-PS logo, and obtain a VMC or CMC if the
+mailbox provider requires one. Providers decide whether to display it, so it
+cannot be guaranteed by the email template alone.
+
 Supabase owns the SMTP delivery and confirmation template settings. Changing the
 frontend cannot make a message arrive when SMTP is not configured, the sender domain
 is not verified, or the Supabase project URL is not reachable.
