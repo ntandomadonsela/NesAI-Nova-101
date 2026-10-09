@@ -19,8 +19,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import * as LucideIcons from "lucide-react";
-import { Send, GraduationCap, FileText, Sparkles } from "lucide-react";
+import {
+  Atom,
+  BookOpen,
+  FileText,
+  GraduationCap,
+  Scale,
+  Send,
+  Sigma,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 
 const searchSchema = z.object({
   agent: z.string().optional(),
@@ -46,6 +55,8 @@ export const Route = createFileRoute("/chat")({
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const tutorIcons = { Sigma, Atom, Scale, TrendingUp, BookOpen, GraduationCap };
+
 function ChatPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/chat" });
@@ -54,9 +65,11 @@ function ChatPage() {
     search.agent ??
     (search.subject?.toLowerCase().includes("law")
       ? "law"
-      : search.subject?.toLowerCase().includes("math") || search.subject?.toLowerCase().includes("calc")
+      : search.subject?.toLowerCase().includes("math") ||
+          search.subject?.toLowerCase().includes("calc")
         ? "math"
-        : search.subject?.toLowerCase().includes("physic") || search.subject?.toLowerCase().includes("science")
+        : search.subject?.toLowerCase().includes("physic") ||
+            search.subject?.toLowerCase().includes("science")
           ? "science"
           : search.subject?.toLowerCase().includes("account") ||
               search.subject?.toLowerCase().includes("econ") ||
@@ -131,7 +144,12 @@ function ChatPage() {
           messages: nextMessages,
           agentId: agent.id,
           resourceContext: search.title
-            ? { id: search.resource, title: search.title, subject: search.subject, year: search.year }
+            ? {
+                id: search.resource,
+                title: search.title,
+                subject: search.subject,
+                year: search.year,
+              }
             : null,
         }),
       });
@@ -174,11 +192,7 @@ function ChatPage() {
             if (payload === "[DONE]") continue;
             try {
               const obj = JSON.parse(payload);
-              const delta =
-                obj?.choices?.[0]?.delta?.content ??
-                obj?.textDelta ??
-                obj?.text ??
-                "";
+              const delta = obj?.choices?.[0]?.delta?.content ?? obj?.textDelta ?? obj?.text ?? "";
               if (delta) assistant += delta;
             } catch {
               /* ignore */
@@ -206,20 +220,19 @@ function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background nesai-app-surface">
       <SiteNav />
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 lg:grid-cols-[280px_1fr]">
+      <div className="nesai-app-page mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[280px_1fr]">
         {/* Left sidebar — subject agents */}
-        <aside className="paper-card h-fit p-5 lg:sticky lg:top-24">
+        <aside className="paper-card study-sidebar h-fit p-5 lg:sticky lg:top-24">
           <div className="mb-4 flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-[var(--color-gold)]" />
             <h2 className="font-serif text-lg">Subject Tutors</h2>
           </div>
           <div className="space-y-1">
             {SUBJECT_AGENTS.map((a) => {
-              const Icon =
-                (LucideIcons as any)[a.icon] ?? LucideIcons.BookOpen;
+              const Icon = tutorIcons[a.icon as keyof typeof tutorIcons] ?? BookOpen;
               const active = a.id === agent.id;
               return (
                 <button
@@ -229,9 +242,7 @@ function ChatPage() {
                     setMessages([]);
                   }}
                   className={`flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition ${
-                    active
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent"
+                    active ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                   }`}
                 >
                   <Icon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -256,11 +267,9 @@ function ChatPage() {
         </aside>
 
         {/* Chat canvas */}
-        <main className="flex h-[calc(100vh-140px)] flex-col">
+        <main className="study-main flex h-[calc(100vh-140px)] flex-col">
           <div className="mb-3">
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Study Desk
-            </div>
+            <div className="app-eyebrow">Study Desk</div>
             <h1 className="font-serif text-3xl">{agent.name}</h1>
           </div>
 
@@ -275,7 +284,7 @@ function ChatPage() {
 
           <div
             ref={scrollRef}
-            className="flex-1 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-6"
+            className="study-conversation flex-1 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-6"
           >
             {messages.length === 0 ? (
               <EmptyState agent={agent} onExample={(q) => setInput(q)} />
@@ -289,7 +298,7 @@ function ChatPage() {
 
           {/* Composer */}
           <div className="mt-4">
-            <div className="paper-card flex items-end gap-2 p-2">
+            <div className="paper-card study-composer flex items-end gap-2 p-2">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -353,13 +362,7 @@ function ChatPage() {
   );
 }
 
-function EmptyState({
-  agent,
-  onExample,
-}: {
-  agent: SubjectAgent;
-  onExample: (q: string) => void;
-}) {
+function EmptyState({ agent, onExample }: { agent: SubjectAgent; onExample: (q: string) => void }) {
   const examples: Record<string, string[]> = {
     math: [
       "Solve for x: $2x^2 - 5x - 3 = 0$",
@@ -400,9 +403,7 @@ function EmptyState({
         <Sparkles className="h-5 w-5 text-[var(--color-gold)]" />
       </div>
       <h3 className="font-serif text-2xl">Start a conversation</h3>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {agent.name} is ready. Try one of these:
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">{agent.name} is ready. Try one of these:</p>
       <div className="mt-6 space-y-2">
         {list.map((q) => (
           <button
@@ -433,10 +434,7 @@ function MessageBubble({ m }: { m: Message }) {
           <div className="whitespace-pre-wrap">{m.content}</div>
         ) : (
           <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-code:before:hidden prose-code:after:hidden">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
               {m.content || "…"}
             </ReactMarkdown>
           </div>

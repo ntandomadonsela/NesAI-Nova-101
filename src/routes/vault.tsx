@@ -36,7 +36,10 @@ type Resource = {
 const DOC_TYPES: Record<string, { label: string; color: string }> = {
   past_paper: { label: "Past Paper", color: "bg-primary/10 text-primary" },
   memo: { label: "Memo", color: "bg-[var(--color-gold)]/15 text-[var(--color-gold)]" },
-  study_note: { label: "Study Notes", color: "bg-[var(--color-success)]/15 text-[var(--color-success)]" },
+  study_note: {
+    label: "Study Notes",
+    color: "bg-[var(--color-success)]/15 text-[var(--color-success)]",
+  },
   summary: { label: "Summary", color: "bg-accent text-foreground" },
 };
 
@@ -49,7 +52,12 @@ function Vault() {
   const [year, setYear] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const { data: resources = [], isLoading } = useQuery({
+  const {
+    data: resources = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["resources"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -77,7 +85,9 @@ function Vault() {
   );
   const bySubject = useMemo(
     () =>
-      subject === "all" ? byCurriculum : byCurriculum.filter((r) => r.subject_or_module === subject),
+      subject === "all"
+        ? byCurriculum
+        : byCurriculum.filter((r) => r.subject_or_module === subject),
     [byCurriculum, subject],
   );
   const byDocType = useMemo(
@@ -113,7 +123,6 @@ function Vault() {
     });
   }, [byDocType, year, search]);
 
-
   const activeCount = [level, curriculum, subject, docType, year].filter((v) => v !== "all").length;
 
   function clearFilters() {
@@ -138,22 +147,24 @@ function Vault() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background nesai-app-surface">
       <SiteNav />
 
-      <div className="border-b border-border bg-card">
+      <div className="app-page-hero border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">The Vault</div>
-          <h1 className="mt-2 font-serif text-4xl md:text-5xl">The Resource Library</h1>
+          <div className="app-eyebrow">THE VAULT</div>
+          <h1 className="mt-2 font-serif text-4xl md:text-5xl app-page-title">
+            The Resource Library
+          </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
             Past exam papers, official memos and study notes — organised for serious students.
           </p>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[280px_1fr]">
+      <div className="nesai-app-page mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
-        <aside className="paper-card sticky top-24 h-fit p-6">
+        <aside className="paper-card vault-filters sticky top-24 h-fit p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-lg">Filters</h2>
             {activeCount > 0 && (
@@ -212,6 +223,17 @@ function Vault() {
                 <div key={i} className="paper-card h-48 animate-pulse" />
               ))}
             </div>
+          ) : isError ? (
+            <div className="paper-card p-10 text-center">
+              <FileText className="mx-auto mb-3 h-8 w-8 text-primary" />
+              <h2 className="font-semibold text-foreground">The Vault didn’t load</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Check your connection and try again.
+              </p>
+              <Button variant="outline" className="mt-5" onClick={() => void refetch()}>
+                Try again
+              </Button>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="paper-card p-12 text-center text-muted-foreground">
               <FileText className="mx-auto mb-3 h-8 w-8 opacity-50" />
@@ -220,11 +242,14 @@ function Vault() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {filtered.map((r) => {
-                const doc = DOC_TYPES[r.document_type] ?? { label: r.document_type, color: "bg-accent" };
+                const doc = DOC_TYPES[r.document_type] ?? {
+                  label: r.document_type,
+                  color: "bg-accent",
+                };
                 return (
                   <article
                     key={r.id}
-                    className="paper-card flex flex-col p-6 transition hover:shadow-editorial-lg"
+                    className="paper-card vault-resource flex flex-col p-6 transition hover:shadow-editorial-lg"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">

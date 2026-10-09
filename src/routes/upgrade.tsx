@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/upgrade")({
@@ -32,13 +32,83 @@ function UpgradePage() {
     "idle",
   );
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const [activeSubscription, setActiveSubscription] = useState<{
+    id: string;
+    current_period_end: string | null;
+  } | null>(null);
+  const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
+  const [subscriptionLoadError, setSubscriptionLoadError] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const paymentReady = Boolean(PAYPAL_CLIENT_ID && PAYPAL_PLAN_ID);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    let cancelled = false;
+    async function loadAccount() {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      setSignedIn(!!data.session);
+      if (!data.session) {
+        setSubscriptionLoaded(true);
+        return;
+      }
+      const { data: subscription, error } = await supabase
+        .from("subscriptions")
+        .select("id, current_period_end")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) {
+        setActiveSubscription(subscription);
+        setSubscriptionLoadError(Boolean(error));
+        setSubscriptionLoaded(true);
+      }
+    }
+    void loadAccount();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  async function cancelPremium() {
+    if (!activeSubscription || cancelling) return;
+    if (
+      !window.confirm(
+        "Cancel your NesAI Premium subscription? This will stop future renewals and end Premium access.",
+      )
+    ) {
+      return;
+    }
+    setCancelling(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Please sign in again to manage your subscription.");
+      const response = await fetch("/api/payments/paypal-cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ subscriptionId: activeSubscription.id }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+      setActiveSubscription(null);
+      toast.success("Your Premium subscription has been cancelled.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not cancel your subscription.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   useEffect(() => {
-    if (!signedIn || !PAYPAL_CLIENT_ID || !PAYPAL_PLAN_ID) return;
+    if (
+      !signedIn ||
+      !subscriptionLoaded ||
+      activeSubscription ||
+      subscriptionLoadError ||
+      !PAYPAL_CLIENT_ID ||
+      !PAYPAL_PLAN_ID
+    )
+      return;
 
     setStatus("loading-sdk");
     const script = document.createElement("script");
@@ -48,13 +118,19 @@ function UpgradePage() {
     script.async = true;
     script.onload = () => {
       const paypal = (window as unknown as { paypal?: PayPalNamespace }).paypal;
-      if (!paypal || !paypalRef.current) return;
+      if (!paypal || !paypalRef.current) {
+        setStatus("error");
+        toast.error("PayPal checkout could not load. Check your connection and try again.");
+        return;
+      }
 
       paypal
         .Buttons({
           style: { shape: "pill", color: "gold", layout: "vertical", label: "subscribe" },
-          createSubscription: (_data: unknown, actions: { subscription: { create: (opts: { plan_id: string }) => Promise<string> } }) =>
-            actions.subscription.create({ plan_id: PAYPAL_PLAN_ID! }),
+          createSubscription: (
+            _data: unknown,
+            actions: { subscription: { create: (opts: { plan_id: string }) => Promise<string> } },
+          ) => actions.subscription.create({ plan_id: PAYPAL_PLAN_ID! }),
           onApprove: async (data: { subscriptionID: string }) => {
             setStatus("processing");
             try {
@@ -72,7 +148,9 @@ function UpgradePage() {
               navigate({ to: "/chat" });
             } catch (err) {
               console.error(err);
-              toast.error("We took your payment but couldn't activate Premium — contact support.");
+              toast.error(
+                "PayPal approved the subscription, but Premium could not be activated. Contact support with your PayPal receipt.",
+              );
               setStatus("error");
             }
           },
@@ -85,25 +163,59 @@ function UpgradePage() {
         .render(paypalRef.current);
       setStatus("ready");
     };
+    script.onerror = () => {
+      setStatus("error");
+      toast.error("PayPal checkout could not load. Refresh the page or try again later.");
+    };
     document.body.appendChild(script);
     return () => {
+      if (paypalRef.current) paypalRef.current.replaceChildren();
       document.body.removeChild(script);
     };
-  }, [signedIn, navigate]);
+  }, [signedIn, subscriptionLoaded, activeSubscription, subscriptionLoadError, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background nesai-app-surface">
       <SiteNav />
-      <div className="mx-auto max-w-2xl px-6 py-16">
-        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Premium</div>
-        <h1 className="mt-2 font-serif text-4xl md:text-5xl">Study without limits.</h1>
-        <p className="mt-3 text-muted-foreground">
-          One monthly subscription. Cancel anytime. Pay with PayPal or a debit/credit card — both
-          options appear in the checkout below.
-        </p>
+      <div className="premium-page mx-auto max-w-5xl px-6 py-14 md:py-20">
+        <div className="premium-intro">
+          <div className="app-eyebrow">NESAI PREMIUM</div>
+          <h1 className="mt-2 font-serif text-4xl md:text-5xl app-page-title">
+            Study without limits.
+          </h1>
+          <p className="mt-3 text-muted-foreground">
+            One monthly subscription. Cancel anytime. Pay with PayPal or a debit/credit card — both
+            options appear in the checkout below.
+          </p>
+        </div>
 
-        <div className="mt-10 rounded-2xl border border-border bg-card p-8">
-          <ul className="space-y-3">
+        <div className="premium-card mt-10 rounded-2xl border border-border bg-card p-8">
+          <div className="premium-card-heading">
+            <div>
+              <span className="app-eyebrow">ONE PLAN. MORE ROOM TO LEARN.</span>
+              <h2>Nova Premium</h2>
+            </div>
+            <span className="premium-plan-badge">MONTHLY</span>
+          </div>
+          {activeSubscription && (
+            <div className="premium-active-status" role="status">
+              <div>
+                <ShieldCheck size={19} />
+                <span>
+                  <strong>Premium is active</strong>
+                  <small>
+                    {activeSubscription.current_period_end
+                      ? `Next renewal ${new Date(activeSubscription.current_period_end).toLocaleDateString()}`
+                      : "Your subscription is active."}
+                  </small>
+                </span>
+              </div>
+              <button type="button" onClick={() => void cancelPremium()} disabled={cancelling}>
+                {cancelling ? "Cancelling…" : "Cancel renewal"}
+              </button>
+            </div>
+          )}
+          <ul className="premium-perks space-y-3">
             {PERKS.map((perk) => (
               <li key={perk} className="flex items-start gap-3 text-sm">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-success)]" />
@@ -122,26 +234,46 @@ function UpgradePage() {
                 first to subscribe.
               </p>
             )}
-            {signedIn && !PAYPAL_CLIENT_ID && (
+            {signedIn && subscriptionLoadError && (
               <p className="text-sm text-destructive">
-                Payments aren't configured yet — set VITE_PAYPAL_CLIENT_ID and VITE_PAYPAL_PLAN_ID.
+                We couldn’t check your subscription. Refresh the page before starting another plan.
               </p>
             )}
-            {signedIn && PAYPAL_CLIENT_ID && (
-              <>
-                {status === "loading-sdk" && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading secure checkout…
-                  </div>
-                )}
-                <div ref={paypalRef} />
-                {status === "processing" && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Activating your subscription…
-                  </div>
-                )}
-              </>
+            {signedIn && !subscriptionLoaded && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking your account…
+              </div>
             )}
+            {signedIn &&
+              subscriptionLoaded &&
+              !activeSubscription &&
+              !subscriptionLoadError &&
+              !paymentReady && (
+                <p className="text-sm text-destructive">
+                  Secure checkout is being prepared. The site owner needs to add the PayPal client
+                  ID and plan ID in the deployment settings.
+                </p>
+              )}
+            {signedIn &&
+              subscriptionLoaded &&
+              !activeSubscription &&
+              !subscriptionLoadError &&
+              PAYPAL_CLIENT_ID &&
+              PAYPAL_PLAN_ID && (
+                <>
+                  {status === "loading-sdk" && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading secure checkout…
+                    </div>
+                  )}
+                  <div id="paypal-button-container" ref={paypalRef} />
+                  {status === "processing" && (
+                    <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Activating your subscription…
+                    </div>
+                  )}
+                </>
+              )}
           </div>
         </div>
       </div>

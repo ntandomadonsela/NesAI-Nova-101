@@ -147,12 +147,10 @@ function AdminUploadPage() {
   if (isAdmin === false) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background nesai-app-surface">
       <SiteNav />
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Staff Console
-        </div>
+      <div className="nesai-app-page mx-auto max-w-4xl px-6 py-12">
+        <div className="app-eyebrow">Staff Console</div>
         <h1 className="mt-2 font-serif text-4xl">Upload Notes & Past Papers</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           Files land in The Vault immediately. Tick "ground the AI tutor" to also let students ask
