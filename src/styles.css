@@ -167,6 +167,18 @@
   line-height: 1.6;
 }
 
+/* Keep the NesAI home hero clear; a legacy page uses the generic .hero-grid
+   selector for a translucent architectural overlay. */
+.nesai-home .hero-grid {
+  inset: auto;
+  opacity: 1;
+  background: none;
+}
+
+.nesai-home .nesai-hero {
+  background: linear-gradient(110deg, #ffffff 8%, #fbfcff 60%, #f5f7ff);
+}
+
 .main-nav > a {
   font-size: 14px;
 }

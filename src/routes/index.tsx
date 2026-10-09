@@ -102,8 +102,6 @@ function HomePage() {
       </header>
       <main>
         <section className="nesai-hero">
-          <div className="hero-orb orb-one" />
-          <div className="hero-orb orb-two" />
           <div className="nesai-wrap hero-grid">
             <div className="hero-copy">
               <div className="hero-kicker">
@@ -134,7 +132,6 @@ function HomePage() {
               </div>
             </div>
             <div className="hero-visual">
-              <div className="visual-glow" />
               <div className="study-card">
                 <div className="study-card-top">
                   <div className="mini-brand">
