@@ -5,9 +5,27 @@ import { createAiGateway } from "@/lib/ai-gateway.server";
 import { createSubjectAgent, getAgent } from "@/lib/subject-agents";
 
 const FREE_DAILY_LIMIT = 5;
+const STREAM_ERROR_MARKER = "\n[[NESAI_STREAM_ERROR]]";
 // Model id format depends on your provider, e.g. "gpt-4o-mini" for OpenAI,
 // "google/gemini-2.5-flash" for OpenRouter. Override via AI_GATEWAY_MODEL.
 const MODEL_ID = process.env.AI_GATEWAY_MODEL ?? "gpt-4o-mini";
+
+function getProviderErrorMessage(error: unknown): string {
+  const status =
+    typeof error === "object" && error !== null && "statusCode" in error
+      ? Number(error.statusCode)
+      : typeof error === "object" && error !== null && "status" in error
+        ? Number(error.status)
+        : undefined;
+
+  if (status === 401 || status === 403)
+    return "The AI provider rejected its API key. Check OPENAI_API_KEY or AI_GATEWAY_API_KEY in Vercel.";
+  if (status === 404)
+    return `The AI model “${MODEL_ID}” was not found. Check AI_GATEWAY_MODEL in Vercel.`;
+  if (status === 402) return "The AI provider account has run out of credits.";
+  if (status === 429) return "The AI provider is busy. Please try again shortly.";
+  return "The AI provider could not answer this request. Please try again shortly.";
+}
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -18,8 +36,21 @@ export const Route = createFileRoute("/api/chat")({
         const token = authHeader.replace(/^Bearer\s+/i, "");
         if (!token) return new Response("Unauthorized", { status: 401 });
 
-        const supabaseUrl = process.env.SUPABASE_URL!;
-        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
+        // Vercel projects are often configured with the public VITE_ names only.
+        // These values are safe for a user-scoped client; the bearer token still
+        // enforces RLS. Prefer the server names when both are configured.
+        const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+        const publishableKey =
+          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!supabaseUrl || !publishableKey) {
+          return Response.json(
+            {
+              error:
+                "Study Desk is missing its Supabase server configuration. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or the matching VITE_ variables) in Vercel.",
+            },
+            { status: 500 },
+          );
+        }
 
         // Client acting as the user (RLS applies)
         const supabase = createClient(supabaseUrl, publishableKey, {
@@ -34,7 +65,7 @@ export const Route = createFileRoute("/api/chat")({
         const userId = userData.user.id;
 
         // 2. Load profile & enforce daily limit
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select(
             "id, is_premium, daily_tokens, last_reset, academic_level, subjects, degree_name, institution, study_year",
@@ -42,23 +73,34 @@ export const Route = createFileRoute("/api/chat")({
           .eq("id", userId)
           .maybeSingle();
 
+        if (profileError) {
+          console.error("Study Desk profile lookup failed", profileError);
+          return Response.json(
+            { error: "Could not load your study profile. Please try again." },
+            { status: 500 },
+          );
+        }
         if (!profile) {
           return new Response("Profile not found", { status: 404 });
         }
 
         const gatewayKey = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY;
         if (!gatewayKey) {
-          return new Response("AI provider key is missing from the server environment.", {
-            status: 500,
-          });
+          return Response.json(
+            {
+              error:
+                "The AI key is missing. Add OPENAI_API_KEY or AI_GATEWAY_API_KEY to Vercel for Production, then redeploy.",
+            },
+            { status: 500 },
+          );
         }
 
         // Reset counter if >24h since last_reset
         const now = new Date();
-        const lastReset = new Date(profile.last_reset);
-        const hoursSince = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-        let dailyTokens = profile.daily_tokens;
-        if (hoursSince >= 24) {
+        const lastResetTime = profile.last_reset ? Date.parse(profile.last_reset) : 0;
+        const hoursSince = (now.getTime() - lastResetTime) / (1000 * 60 * 60);
+        let dailyTokens = profile.daily_tokens ?? 0;
+        if (!Number.isFinite(hoursSince) || hoursSince >= 24) {
           dailyTokens = 0;
           await supabase
             .from("profiles")
@@ -81,7 +123,17 @@ export const Route = createFileRoute("/api/chat")({
           resourceContext?: { id?: string; title?: string; subject?: string; year?: string } | null;
         };
         const body = (await request.json()) as Body;
-        if (!Array.isArray(body.messages) || body.messages.length === 0) {
+        if (
+          !Array.isArray(body.messages) ||
+          body.messages.length === 0 ||
+          body.messages.some(
+            (message) =>
+              !message ||
+              !["user", "assistant"].includes(message.role) ||
+              typeof message.content !== "string" ||
+              !message.content.trim(),
+          )
+        ) {
           return new Response("Bad request", { status: 400 });
         }
 
@@ -146,15 +198,7 @@ export const Route = createFileRoute("/api/chat")({
           system += `\n\nRelevant excerpts from the NesAI Vault are provided below. Use them to ground curriculum-specific explanations. Distinguish the supplied source from your explanation, and clearly say when these excerpts do not answer the question. Do not invent content from a paper you cannot see.\n\n${context}`;
         }
 
-        // 4. Increment counter for non-premium (best-effort)
-        if (!profile.is_premium) {
-          await supabase
-            .from("profiles")
-            .update({ daily_tokens: dailyTokens + 1 })
-            .eq("id", userId);
-        }
-
-        // 5. Call the configured AI gateway
+        // 4. Call the configured AI gateway
         const gateway = createAiGateway(gatewayKey, process.env.AI_GATEWAY_BASE_URL);
 
         try {
@@ -162,21 +206,77 @@ export const Route = createFileRoute("/api/chat")({
             model: gateway(MODEL_ID),
             system,
             messages: body.messages as ModelMessage[],
+            onError: ({ error }) => {
+              console.error("AI provider stream failed", error);
+            },
+            onFinish: async () => {
+              // Failed provider requests do not consume the student's daily quota.
+              if (!profile.is_premium) {
+                const { error: quotaError } = await supabase
+                  .from("profiles")
+                  .update({ daily_tokens: dailyTokens + 1 })
+                  .eq("id", userId);
+                if (quotaError) console.error("Study Desk quota update failed", quotaError);
+              }
+            },
           });
-          return result.toTextStreamResponse();
-        } catch (err: any) {
+          const stream = new ReadableStream<string>({
+            async start(controller) {
+              try {
+                for await (const textPart of result.textStream) controller.enqueue(textPart);
+              } catch (error) {
+                console.error("AI provider stream failed", error);
+                controller.enqueue(`${STREAM_ERROR_MARKER}${getProviderErrorMessage(error)}`);
+              } finally {
+                controller.close();
+              }
+            },
+          });
+          return new Response(stream.pipeThrough(new TextEncoderStream()), {
+            headers: {
+              "Content-Type": "text/plain; charset=utf-8",
+              "Cache-Control": "no-cache, no-transform",
+            },
+          });
+        } catch (err: unknown) {
           console.error("AI gateway error", err);
-          const status = err?.statusCode ?? 500;
+          const status =
+            typeof err === "object" && err !== null && "statusCode" in err
+              ? Number(err.statusCode)
+              : 500;
           if (status === 429) {
             return new Response(
-              JSON.stringify({ error: "Rate limited by AI provider", reason: "provider_rate" }),
+              JSON.stringify({
+                error: "The AI provider is busy. Please try again shortly.",
+                reason: "provider_rate",
+              }),
               { status: 429, headers: { "Content-Type": "application/json" } },
             );
           }
           if (status === 402) {
-            return new Response("AI credits exhausted", { status: 402 });
+            return Response.json(
+              { error: "The AI provider account has run out of credits." },
+              { status: 402 },
+            );
           }
-          return new Response("AI error", { status: 500 });
+          if (status === 401 || status === 403) {
+            return Response.json(
+              { error: "The AI provider rejected its API key. Check the key in Vercel settings." },
+              { status: 502 },
+            );
+          }
+          if (status === 404) {
+            return Response.json(
+              {
+                error: `The AI model “${MODEL_ID}” was not found. Check AI_GATEWAY_MODEL in Vercel.`,
+              },
+              { status: 502 },
+            );
+          }
+          return Response.json(
+            { error: "The AI provider could not answer this request. Please try again shortly." },
+            { status: 502 },
+          );
         }
       },
     },

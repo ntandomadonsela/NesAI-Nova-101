@@ -54,6 +54,7 @@ export const Route = createFileRoute("/chat")({
 });
 
 type Message = { role: "user" | "assistant"; content: string };
+const STREAM_ERROR_MARKER = "\n[[NESAI_STREAM_ERROR]]";
 
 const tutorIcons = { Sigma, Atom, Scale, TrendingUp, BookOpen, GraduationCap };
 
@@ -223,17 +224,21 @@ function ChatPage() {
         if (body?.reason === "daily_limit") {
           setShowLimit(true);
         } else {
-          toast.error("Rate limited. Try again shortly.");
+          toast.error(body?.error ?? "The AI provider is busy. Try again shortly.");
         }
         return;
       }
       if (res.status === 402) {
-        toast.error("AI credits exhausted. Please contact support.");
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.error ?? "AI credits are exhausted. Please contact support.");
         setStreaming(false);
         return;
       }
       if (!res.ok || !res.body) {
-        const details = (await res.text()).trim();
+        const contentType = res.headers.get("content-type") ?? "";
+        const details = contentType.includes("application/json")
+          ? ((await res.json().catch(() => ({}))) as { error?: string }).error
+          : (await res.text()).trim();
         throw new Error(details || `The tutor request failed (${res.status}).`);
       }
 
@@ -242,33 +247,34 @@ function ChatPage() {
       let assistant = "";
       setMessages([...nextMessages, { role: "assistant", content: "" }]);
 
-      // Parse Vercel AI SDK stream text protocol / SSE
+      // toTextStreamResponse emits plain UTF-8 text chunks.
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Support both raw text streaming and SSE `data: {...}` lines
-        for (const line of chunk.split("\n")) {
-          if (!line) continue;
-          if (line.startsWith("data: ")) {
-            const payload = line.slice(6).trim();
-            if (payload === "[DONE]") continue;
-            try {
-              const obj = JSON.parse(payload);
-              const delta = obj?.choices?.[0]?.delta?.content ?? obj?.textDelta ?? obj?.text ?? "";
-              if (delta) assistant += delta;
-            } catch {
-              /* ignore */
-            }
-          } else {
-            assistant += line;
-          }
-          setMessages([...nextMessages, { role: "assistant", content: assistant }]);
+        assistant += decoder.decode(value, { stream: true });
+        const streamErrorAt = assistant.indexOf(STREAM_ERROR_MARKER);
+        if (streamErrorAt >= 0) {
+          throw new Error(assistant.slice(streamErrorAt + STREAM_ERROR_MARKER.length).trim());
         }
+        setMessages([...nextMessages, { role: "assistant", content: assistant }]);
       }
+      assistant += decoder.decode();
+      const streamErrorAt = assistant.indexOf(STREAM_ERROR_MARKER);
+      if (streamErrorAt >= 0) {
+        throw new Error(assistant.slice(streamErrorAt + STREAM_ERROR_MARKER.length).trim());
+      }
+      if (!assistant.trim()) {
+        throw new Error("The AI returned an empty answer. Please try again.");
+      }
+      setMessages([...nextMessages, { role: "assistant", content: assistant }]);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
-      setMessages(nextMessages);
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message);
+      setInput(text);
+      setMessages([
+        ...nextMessages,
+        { role: "assistant", content: `I couldn't get an answer from the AI. ${message}` },
+      ]);
     } finally {
       setStreaming(false);
     }
