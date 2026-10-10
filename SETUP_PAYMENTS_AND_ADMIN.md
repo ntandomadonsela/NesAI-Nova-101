@@ -12,7 +12,7 @@ with a "system prompt" that tells it how to behave for that subject (Math Tutor,
 etc.). That's a general-purpose model — nothing is fine-tuned on your content, which is why
 it already "knew stuff" when you tested it.
 
-What *is* built, and does the job you actually want, is retrieval-augmented generation
+What _is_ built, and does the job you actually want, is retrieval-augmented generation
 (RAG): when staff upload a document and tick "ground the AI tutor in this document," the
 file's text is extracted, split into chunks, and stored in `document_chunks`
 (`src/routes/api/admin/ingest.ts`). When a student asks a question about that resource,
@@ -26,17 +26,17 @@ upload, the better-grounded the tutor gets — no training step required.
   `tsc --noEmit` and would have failed your production build. Added
   `src/types/paypal.d.ts` with a minimal ambient type for the PayPal JS SDK. Verified
   `npx tsc --noEmit` and `npm run build` both pass now.
-- **The staff upload console and upgrade page had no link anywhere in the UI.**
-  `/admin/upload` and `/upgrade` existed as routes but nothing pointed to them.
-  Added an "Upgrade" link (visible to everyone) and a "Staff Upload" link (visible only
-  to admins) to `src/components/site-nav.tsx`.
+- **Admin dashboard:** `/admin` now shows real auth sign-ups, Premium subscribers and Vault
+  documents. The admin link and all admin API routes are restricted to the verified
+  `ntando@nesmaholdings.co.za` account. Uploads use a short-lived signed Storage URL; the
+  service role key stays server-side.
 - Changed the homepage footer from "A Nesma Holdings (Pty) Ltd product" to
   "Owned and operated by Nesma Holdings (Pty) Ltd."
 
 ## 3. What was already built (I didn't build these — just verifying they're real and wired up)
 
 - **Payments**: `src/routes/upgrade.tsx` renders the PayPal JS SDK with
-  `vault=true&intent=subscription`, which shows *both* a PayPal button and a
+  `vault=true&intent=subscription`, which shows _both_ a PayPal button and a
   "Debit or Credit Card" button in the same checkout — so you get card payments without
   needing a separate processor like Stripe. `src/routes/api/payments/paypal-subscribe.ts`
   verifies the subscription server-side and flips `profiles.is_premium` to true.
@@ -49,6 +49,7 @@ upload, the better-grounded the tutor gets — no training step required.
 ## 4. What you still need to do
 
 ### A. Environment variables
+
 Your exported `.env` only has Supabase keys. Add these (locally in `.env`, and in
 whatever host runs this in production):
 
@@ -66,6 +67,7 @@ VITE_PAYPAL_PLAN_ID=...
 ```
 
 ### B. Deploying to Vercel
+
 This project uses Nitro's Vercel preset when Vercel builds it. `vercel.json` selects the
 TanStack Start framework preset, and `vite.config.ts` chooses the Nitro adapter when the
 `VERCEL` build environment is present.
@@ -90,6 +92,7 @@ The Netlify adapter remains available as an alternative: its settings are in `ne
 and `vite.config.ts` selects it when `VERCEL` is not set.
 
 ### C. PayPal setup (~15 minutes)
+
 1. Go to [developer.paypal.com](https://developer.paypal.com/dashboard/) and log in with
    your PayPal business account (create one if you don't have it yet — it's free).
 2. **Apps & Credentials** → create an app → copy the **Client ID** and **Secret** into
@@ -113,19 +116,15 @@ pay by debit/credit card without a PayPal account — no Stripe account needed. 
 specifically like a Stripe-branded card form instead later, that's a separate, larger
 integration — say the word and I'll scope it out.
 
-### D. Making yourself (or an employee) an admin
-There's no self-serve "make me admin" button by design — anyone could tick it otherwise.
-In the Supabase SQL editor for this project, run (with the person's real user UUID from
-**Authentication → Users**):
+### D. Admin dashboard access
 
-```sql
-insert into public.user_roles (user_id, role)
-values ('<their-user-uuid>', 'admin');
-```
-
-Once that row exists, "Staff Upload" appears in their nav automatically.
+The admin console is restricted in both the interface and server routes to the verified
+email `ntando@nesmaholdings.co.za`. The project must have `SUPABASE_SERVICE_ROLE_KEY`
+configured as a server-only Vercel environment variable for listing actual Auth users and
+managing Vault documents. Never add this key with a `VITE_` prefix or expose it in browser code.
 
 ## 5. Suggested next test pass
+
 1. Fill in the env vars above (sandbox PayPal is fine to start).
 2. Sign in, go to **Upgrade**, subscribe with a PayPal sandbox account and separately
    with a sandbox card, confirm `profiles.is_premium` flips to `true` both ways.

@@ -61,8 +61,8 @@ export function SiteNav() {
             <CreditCard size={16} /> Premium
           </Link>
           {isAdmin && (
-            <Link to="/admin/upload" onClick={() => setOpen(false)}>
-              <ShieldCheck size={16} /> Staff upload
+            <Link to="/admin" onClick={() => setOpen(false)}>
+              <ShieldCheck size={16} /> Admin dashboard
             </Link>
           )}
           {signedIn ? (

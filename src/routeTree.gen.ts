@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -18,7 +19,9 @@ import { Route as VaultRouteImport } from './routes/vault'
 import { Route as AdminUploadRouteImport } from './routes/admin/upload'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLeadsRouteImport } from './routes/api/leads'
+import { Route as ApiAdminConsoleRouteImport } from './routes/api/admin/console'
 import { Route as ApiAdminIngestRouteImport } from './routes/api/admin/ingest'
+import { Route as ApiAdminResourcesRouteImport } from './routes/api/admin/resources'
 import { Route as ApiPaymentsPaypalCancelRouteImport } from './routes/api/payments/paypal-cancel'
 import { Route as ApiPaymentsPaypalSubscribeRouteImport } from './routes/api/payments/paypal-subscribe'
 import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payments/paypal-webhook'
@@ -26,6 +29,11 @@ import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payme
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -54,9 +62,9 @@ const VaultRoute = VaultRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUploadRoute = AdminUploadRouteImport.update({
-  id: '/admin/upload',
-  path: '/admin/upload',
-  getParentRoute: () => rootRouteImport,
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
@@ -68,9 +76,19 @@ const ApiLeadsRoute = ApiLeadsRouteImport.update({
   path: '/api/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminConsoleRoute = ApiAdminConsoleRouteImport.update({
+  id: '/api/admin/console',
+  path: '/api/admin/console',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminIngestRoute = ApiAdminIngestRouteImport.update({
   id: '/api/admin/ingest',
   path: '/api/admin/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminResourcesRoute = ApiAdminResourcesRouteImport.update({
+  id: '/api/admin/resources',
+  path: '/api/admin/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentsPaypalCancelRoute = ApiPaymentsPaypalCancelRouteImport.update({
@@ -93,6 +111,7 @@ const ApiPaymentsPaypalWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/profile': typeof ProfileRoute
@@ -101,13 +120,16 @@ export interface FileRoutesByFullPath {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
+  '/api/admin/resources': typeof ApiAdminResourcesRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/profile': typeof ProfileRoute
@@ -116,7 +138,9 @@ export interface FileRoutesByTo {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
+  '/api/admin/resources': typeof ApiAdminResourcesRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -124,6 +148,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/profile': typeof ProfileRoute
@@ -132,7 +157,9 @@ export interface FileRoutesById {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
+  '/api/admin/resources': typeof ApiAdminResourcesRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -141,6 +168,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/chat'
     | '/profile'
@@ -149,13 +177,16 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/admin/console'
     | '/api/admin/ingest'
+    | '/api/admin/resources'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/auth'
     | '/chat'
     | '/profile'
@@ -164,13 +195,16 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/admin/console'
     | '/api/admin/ingest'
+    | '/api/admin/resources'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
     | '/chat'
     | '/profile'
@@ -179,7 +213,9 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/admin/console'
     | '/api/admin/ingest'
+    | '/api/admin/resources'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
@@ -187,15 +223,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
   ProfileRoute: typeof ProfileRoute
   UpgradeRoute: typeof UpgradeRoute
   VaultRoute: typeof VaultRoute
-  AdminUploadRoute: typeof AdminUploadRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiLeadsRoute: typeof ApiLeadsRoute
+  ApiAdminConsoleRoute: typeof ApiAdminConsoleRoute
   ApiAdminIngestRoute: typeof ApiAdminIngestRoute
+  ApiAdminResourcesRoute: typeof ApiAdminResourcesRoute
   ApiPaymentsPaypalCancelRoute: typeof ApiPaymentsPaypalCancelRoute
   ApiPaymentsPaypalSubscribeRoute: typeof ApiPaymentsPaypalSubscribeRoute
   ApiPaymentsPaypalWebhookRoute: typeof ApiPaymentsPaypalWebhookRoute
@@ -208,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -247,10 +292,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/upload': {
       id: '/admin/upload'
-      path: '/admin/upload'
+      path: '/upload'
       fullPath: '/admin/upload'
       preLoaderRoute: typeof AdminUploadRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/chat': {
       id: '/api/chat'
@@ -266,11 +311,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/console': {
+      id: '/api/admin/console'
+      path: '/api/admin/console'
+      fullPath: '/api/admin/console'
+      preLoaderRoute: typeof ApiAdminConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/ingest': {
       id: '/api/admin/ingest'
       path: '/api/admin/ingest'
       fullPath: '/api/admin/ingest'
       preLoaderRoute: typeof ApiAdminIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/resources': {
+      id: '/api/admin/resources'
+      path: '/api/admin/resources'
+      fullPath: '/api/admin/resources'
+      preLoaderRoute: typeof ApiAdminResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/paypal-cancel': {
@@ -297,17 +356,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminUploadRoute: typeof AdminUploadRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminUploadRoute: AdminUploadRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
   ProfileRoute: ProfileRoute,
   UpgradeRoute: UpgradeRoute,
   VaultRoute: VaultRoute,
-  AdminUploadRoute: AdminUploadRoute,
   ApiChatRoute: ApiChatRoute,
   ApiLeadsRoute: ApiLeadsRoute,
+  ApiAdminConsoleRoute: ApiAdminConsoleRoute,
   ApiAdminIngestRoute: ApiAdminIngestRoute,
+  ApiAdminResourcesRoute: ApiAdminResourcesRoute,
   ApiPaymentsPaypalCancelRoute: ApiPaymentsPaypalCancelRoute,
   ApiPaymentsPaypalSubscribeRoute: ApiPaymentsPaypalSubscribeRoute,
   ApiPaymentsPaypalWebhookRoute: ApiPaymentsPaypalWebhookRoute,
