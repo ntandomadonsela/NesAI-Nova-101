@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { streamText, type ModelMessage } from "ai";
 import { createAiGateway } from "@/lib/ai-gateway.server";
-import { getAgent } from "@/lib/subject-agents";
+import { createSubjectAgent, getAgent } from "@/lib/subject-agents";
 
 const FREE_DAILY_LIMIT = 5;
 // Model id format depends on your provider, e.g. "gpt-4o-mini" for OpenAI,
@@ -36,7 +36,9 @@ export const Route = createFileRoute("/api/chat")({
         // 2. Load profile & enforce daily limit
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, is_premium, daily_tokens, last_reset")
+          .select(
+            "id, is_premium, daily_tokens, last_reset, academic_level, subjects, degree_name, institution, study_year",
+          )
           .eq("id", userId)
           .maybeSingle();
 
@@ -68,6 +70,7 @@ export const Route = createFileRoute("/api/chat")({
         type Body = {
           messages: Array<{ role: "user" | "assistant"; content: string }>;
           agentId?: string;
+          subjectName?: string;
           resourceContext?: { id?: string; title?: string; subject?: string; year?: string } | null;
         };
         const body = (await request.json()) as Body;
@@ -75,32 +78,65 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Bad request", { status: 400 });
         }
 
-        const agent = getAgent(body.agentId);
+        const permittedSubject =
+          body.subjectName && (profile.subjects ?? []).includes(body.subjectName);
+        if (body.subjectName && !permittedSubject) {
+          return new Response(
+            "That subject is not in your study profile. Update your profile and try again.",
+            { status: 403 },
+          );
+        }
+        const agent = permittedSubject
+          ? createSubjectAgent(body.subjectName!, profile.academic_level ?? "Grade 12")
+          : getAgent(body.agentId);
 
-        let system = agent.systemPrompt;
+        let system = `${agent.systemPrompt}\n\nStudent profile: academic level ${profile.academic_level ?? "not specified"}${profile.degree_name ? `; degree ${profile.degree_name}` : ""}${profile.institution ? `; institution ${profile.institution}` : ""}${profile.study_year ? `; study year ${profile.study_year}` : ""}. Their selected subjects/modules are ${(profile.subjects ?? []).join(", ") || "not set"}. Keep answers within the requested subject. For school students, align to the South African CAPS/DBE curriculum; for university students, do not assume a specific institution's syllabus unless material is supplied.`;
         if (body.resourceContext?.title) {
           system += `\n\nThe student is currently studying this document: "${body.resourceContext.title}"${
             body.resourceContext.subject ? ` (${body.resourceContext.subject})` : ""
           }${body.resourceContext.year ? `, year ${body.resourceContext.year}` : ""}. Frame examples and explanations around this material when relevant.`;
         }
 
-        // RAG: ground the answer in the actual uploaded document, if staff have
-        // processed it into searchable chunks (see /admin/upload).
-        if (body.resourceContext?.id) {
-          const lastUserMessage = [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
-          const { data: chunks, error: chunkErr } = await supabase.rpc("match_document_chunks", {
-            _resource_id: body.resourceContext.id,
-            _query: lastUserMessage,
-            _limit: 4,
-          });
-          if (chunkErr) {
-            console.error("match_document_chunks error", chunkErr);
-          } else if (chunks && chunks.length > 0) {
-            const context = chunks
-              .map((c: { chunk_index: number; content: string }) => `[Excerpt ${c.chunk_index + 1}] ${c.content}`)
-              .join("\n\n");
-            system += `\n\nHere are the most relevant excerpts from the actual document, uploaded by NesAI Nova staff. Ground your answer in these where they're relevant, and say so explicitly when you're quoting or paraphrasing them:\n\n${context}`;
-          }
+        // RAG: use the open paper when present, otherwise retrieve processed
+        // Vault material for the learner's own subject and level.
+        const lastUserMessage =
+          [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+        const resourceIds: string[] = [];
+        if (body.resourceContext?.id) resourceIds.push(body.resourceContext.id);
+        else if (permittedSubject) {
+          const { data: subjectResources, error: resourceErr } = await supabase
+            .from("resources")
+            .select("id")
+            .eq("academic_level", profile.academic_level ?? "Grade 12")
+            .ilike("subject_or_module", body.subjectName!)
+            .limit(3);
+          if (resourceErr) console.error("Subject resource lookup failed", resourceErr);
+          else resourceIds.push(...(subjectResources ?? []).map((resource) => resource.id));
+        }
+
+        const retrieved = await Promise.all(
+          resourceIds.slice(0, 3).map(async (resourceId) => {
+            const { data: chunks, error: chunkErr } = await supabase.rpc("match_document_chunks", {
+              _resource_id: resourceId,
+              _query: lastUserMessage,
+              _limit: body.resourceContext?.id ? 4 : 2,
+            });
+            if (chunkErr) {
+              console.error("match_document_chunks error", chunkErr);
+              return [];
+            }
+            return chunks ?? [];
+          }),
+        );
+        const passages = retrieved.flat().slice(0, 6);
+        if (passages.length) {
+          const context = passages
+            .map(
+              (c: { chunk_index: number; content: string }) =>
+                `[Excerpt ${c.chunk_index + 1}] ${c.content}`,
+            )
+            .join("\n\n");
+          system += `\n\nRelevant excerpts from the NesAI Vault are provided below. Use them to ground curriculum-specific explanations. Distinguish the supplied source from your explanation, and clearly say when these excerpts do not answer the question. Do not invent content from a paper you cannot see.\n\n${context}`;
         }
 
         // 4. Increment counter for non-premium (best-effort)

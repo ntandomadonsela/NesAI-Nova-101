@@ -7,9 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import {
+  DEGREE_SUGGESTIONS,
+  LEVELS,
+  SCHOOL_SUBJECTS,
+  UNIVERSITY_SUBJECTS,
+} from "@/lib/study-catalog";
 
 const searchSchema = z.object({
-  mode: z.enum(["signin", "signup"]).optional(),
+  mode: z.enum(["signin", "signup", "forgot", "recovery"]).optional(),
   redirect: z.string().optional(),
 });
 
@@ -27,13 +33,19 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { mode: requestedMode, redirect } = useSearch({ from: "/auth" });
-  const [mode, setMode] = useState<"signin" | "signup">(
-    requestedMode === "signup" ? "signup" : "signin",
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "recovery">(
+    requestedMode ?? "signin",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [academicLevel, setAcademicLevel] = useState("Grade 12");
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [otherSubject, setOtherSubject] = useState("");
+  const [degreeName, setDegreeName] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [studyYear, setStudyYear] = useState("");
+  const [resetSent, setResetSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [signupNotice, setSignupNotice] = useState("");
   const [pendingSignupEmail, setPendingSignupEmail] = useState("");
@@ -43,11 +55,20 @@ function AuthPage() {
   );
 
   useEffect(() => {
+    if (requestedMode) setMode(requestedMode);
+  }, [requestedMode]);
+
+  useEffect(() => {
+    if (requestedMode === "recovery") setMode("recovery");
+  }, [requestedMode]);
+
+  useEffect(() => {
     if (!supabaseConfigured) return;
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: (redirect as any) ?? "/chat" });
+      if (data.session && requestedMode !== "recovery")
+        navigate({ to: (redirect as any) ?? "/chat" });
     });
-  }, [navigate, redirect, supabaseConfigured]);
+  }, [navigate, redirect, supabaseConfigured, requestedMode]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,13 +79,40 @@ function AuthPage() {
     }
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: new URL("/auth?mode=recovery", window.location.origin).toString(),
+        });
+        if (error) throw error;
+        setResetSent(true);
+        toast.success("If an account exists for that email, a reset link is on its way.");
+        return;
+      }
+      if (mode === "recovery") {
+        if (password.length < 8) throw new Error("Choose a password with at least 8 characters.");
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        toast.success("Password updated. You can now continue to your study desk.");
+        navigate({ to: (redirect as any) ?? "/chat" });
+        return;
+      }
       if (mode === "signup") {
+        if (subjects.length === 0) throw new Error("Choose at least one subject or module.");
+        if (academicLevel === "University" && !degreeName.trim())
+          throw new Error("Enter the degree or qualification you are studying.");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: new URL("/auth?redirect=%2Fchat", window.location.origin).toString(),
-            data: { full_name: fullName, academic_level: academicLevel },
+            data: {
+              full_name: fullName,
+              academic_level: academicLevel,
+              subjects,
+              degree_name: degreeName.trim(),
+              institution: institution.trim(),
+              study_year: studyYear.trim(),
+            },
           },
         });
         if (error) throw error;
@@ -155,15 +203,31 @@ function AuthPage() {
         <section className="auth-form-column">
           <div className="paper-card auth-card">
             <div className="auth-form-kicker">
-              {mode === "signup" ? "START LEARNING" : "WELCOME BACK"}
+              {mode === "signup"
+                ? "START LEARNING"
+                : mode === "forgot"
+                  ? "ACCOUNT RECOVERY"
+                  : mode === "recovery"
+                    ? "CHOOSE A NEW PASSWORD"
+                    : "WELCOME BACK"}
             </div>
             <h1 className="auth-title">
-              {mode === "signup" ? "Create your account" : "Welcome back"}
+              {mode === "signup"
+                ? "Create your account"
+                : mode === "forgot"
+                  ? "Reset your password"
+                  : mode === "recovery"
+                    ? "Set a new password"
+                    : "Welcome back"}
             </h1>
             <p className="auth-description">
               {mode === "signup"
                 ? "Free forever. Upgrade to Premium anytime."
-                : "Sign in to continue studying."}
+                : mode === "forgot"
+                  ? "We’ll email you a secure link to choose a new password."
+                  : mode === "recovery"
+                    ? "Use a strong password you haven’t used before."
+                    : "Sign in to continue studying."}
             </p>
 
             {!supabaseConfigured && (
@@ -186,6 +250,11 @@ function AuthPage() {
               </div>
             )}
 
+            {resetSent && mode === "forgot" && (
+              <div className="auth-confirmation" role="status">
+                Check your inbox and spam folder for a secure password reset link.
+              </div>
+            )}
             <form onSubmit={onSubmit} className="auth-form">
               {mode === "signup" && (
                 <>
@@ -204,41 +273,143 @@ function AuthPage() {
                     <select
                       id="level"
                       value={academicLevel}
-                      onChange={(e) => setAcademicLevel(e.target.value)}
+                      onChange={(e) => {
+                        setAcademicLevel(e.target.value);
+                        setSubjects([]);
+                      }}
                       className="w-full"
                     >
-                      <option>Grade 10</option>
-                      <option>Grade 11</option>
-                      <option>Grade 12</option>
-                      <option>University</option>
+                      {LEVELS.map((level) => (
+                        <option key={level}>{level}</option>
+                      ))}
                     </select>
+                  </div>
+                  {academicLevel === "University" && (
+                    <>
+                      <div>
+                        <Label htmlFor="degree">Degree or qualification</Label>
+                        <input
+                          id="degree"
+                          list="degree-options"
+                          value={degreeName}
+                          onChange={(e) => setDegreeName(e.target.value)}
+                          placeholder="e.g. BSc Computer Science"
+                          required
+                        />
+                        <datalist id="degree-options">
+                          {DEGREE_SUGGESTIONS.map((degree) => (
+                            <option key={degree} value={degree} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div>
+                        <Label htmlFor="institution">University or institution (optional)</Label>
+                        <Input
+                          id="institution"
+                          value={institution}
+                          onChange={(e) => setInstitution(e.target.value)}
+                          placeholder="e.g. University of Cape Town"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="study-year">Year of study (optional)</Label>
+                        <Input
+                          id="study-year"
+                          value={studyYear}
+                          onChange={(e) => setStudyYear(e.target.value)}
+                          placeholder="e.g. Year 2"
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <Label htmlFor="subjects">
+                      {academicLevel === "University"
+                        ? "Your degree modules / subjects"
+                        : "Your subjects"}
+                    </Label>
+                    <div
+                      id="subjects"
+                      className="max-h-48 overflow-y-auto rounded-md border border-input bg-background p-3 grid grid-cols-1 gap-2 sm:grid-cols-2"
+                    >
+                      {[
+                        ...(academicLevel === "University" ? UNIVERSITY_SUBJECTS : SCHOOL_SUBJECTS),
+                        ...subjects.filter(
+                          (subject) =>
+                            !(
+                              academicLevel === "University" ? UNIVERSITY_SUBJECTS : SCHOOL_SUBJECTS
+                            ).includes(subject),
+                        ),
+                      ].map((subject) => (
+                        <label key={subject} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={subjects.includes(subject)}
+                            onChange={(e) =>
+                              setSubjects((old) =>
+                                e.target.checked
+                                  ? [...old, subject]
+                                  : old.filter((item) => item !== subject),
+                              )
+                            }
+                          />
+                          {subject}
+                        </label>
+                      ))}
+                    </div>
+                    <Input
+                      className="mt-2"
+                      aria-label="Add a subject or module not listed"
+                      value={otherSubject}
+                      placeholder={
+                        academicLevel === "University"
+                          ? "Add a module not listed, then press Enter"
+                          : "Add another approved subject, then press Enter"
+                      }
+                      onChange={(e) => setOtherSubject(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const value = otherSubject.trim();
+                          if (value && !subjects.includes(value))
+                            setSubjects((old) => [...old, value]);
+                          setOtherSubject("");
+                        }
+                      }}
+                    />
                   </div>
                 </>
               )}
 
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                />
-              </div>
+              {mode !== "recovery" && (
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              {mode !== "forgot" && (
+                <div>
+                  <Label htmlFor="password">
+                    {mode === "recovery" ? "New password" : "Password"}
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={mode === "recovery" ? 8 : 6}
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  />
+                </div>
+              )}
 
               <Button
                 type="submit"
@@ -249,24 +420,53 @@ function AuthPage() {
                   "Please wait…"
                 ) : (
                   <>
-                    {mode === "signup" ? "Create account" : "Sign in"}
+                    {mode === "signup"
+                      ? "Create account"
+                      : mode === "forgot"
+                        ? "Send reset link"
+                        : mode === "recovery"
+                          ? "Update password"
+                          : "Sign in"}
                     <ArrowRight size={17} />
                   </>
                 )}
               </Button>
             </form>
 
+            {mode === "signin" && (
+              <button
+                type="button"
+                className="auth-forgot"
+                onClick={() => {
+                  setResetSent(false);
+                  setMode("forgot");
+                }}
+              >
+                Forgot password?
+              </button>
+            )}
+
             <div className="auth-switch">
-              {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
+              {mode === "forgot" || mode === "recovery"
+                ? "Remembered it?"
+                : mode === "signup"
+                  ? "Already have an account?"
+                  : "New here?"}{" "}
               <button
                 className="font-medium text-foreground underline underline-offset-4"
                 type="button"
                 onClick={() => {
                   setSignupNotice("");
-                  setMode(mode === "signup" ? "signin" : "signup");
+                  setMode(
+                    mode === "signup" || mode === "forgot" || mode === "recovery"
+                      ? "signin"
+                      : "signup",
+                  );
                 }}
               >
-                {mode === "signup" ? "Sign in" : "Create one"}
+                {mode === "signup" || mode === "forgot" || mode === "recovery"
+                  ? "Sign in"
+                  : "Create one"}
               </button>
             </div>
           </div>

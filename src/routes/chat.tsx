@@ -6,7 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
-import { SUBJECT_AGENTS, getAgent, type SubjectAgent } from "@/lib/subject-agents";
+import { createStudentAgents, getAgent, type SubjectAgent } from "@/lib/subject-agents";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +80,9 @@ function ChatPage() {
               : undefined);
 
   const [agent, setAgent] = useState<SubjectAgent>(getAgent(initialAgentId));
+  const [studentAgents, setStudentAgents] = useState<SubjectAgent[]>([]);
+  const [studentLevel, setStudentLevel] = useState("Grade 12");
+  const [studentDegree, setStudentDegree] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -89,14 +92,37 @@ function ChatPage() {
 
   // Auth check
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
         navigate({ to: "/auth", search: { redirect: "/chat" } as any });
       } else {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("academic_level, subjects, degree_name")
+          .eq("id", data.session.user.id)
+          .maybeSingle();
+        const level = profile?.academic_level ?? "Grade 12";
+        const subjects = profile?.subjects ?? [];
+        const agents = createStudentAgents(subjects, level);
+        setStudentLevel(level);
+        setStudentDegree(profile?.degree_name ?? "");
+        setStudentAgents(agents);
+        if (
+          initialAgentId?.startsWith("subject-") &&
+          agents.some((item) => item.id === initialAgentId)
+        )
+          setAgent(agents.find((item) => item.id === initialAgentId)!);
+        else if (search.subject) {
+          const found = agents.find((item) =>
+            item.name.toLowerCase().startsWith(search.subject!.toLowerCase()),
+          );
+          setAgent(found ?? agents[0] ?? getAgent("general"));
+        } else if (agents.length) setAgent(agents[0]);
+        else setAgent(getAgent("general"));
         setReady(true);
       }
     });
-  }, [navigate]);
+  }, [navigate, initialAgentId, search.subject]);
 
   // Preload resource context if arrived from vault
   useEffect(() => {
@@ -119,7 +145,7 @@ function ChatPage() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || streaming) return;
+    if (!text || streaming || !studentAgents.length) return;
 
     const nextMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
@@ -143,6 +169,7 @@ function ChatPage() {
         body: JSON.stringify({
           messages: nextMessages,
           agentId: agent.id,
+          subjectName: agent.name.replace(/ Tutor$/, ""),
           resourceContext: search.title
             ? {
                 id: search.resource,
@@ -231,7 +258,12 @@ function ChatPage() {
             <h2 className="font-serif text-lg">Subject Tutors</h2>
           </div>
           <div className="space-y-1">
-            {SUBJECT_AGENTS.map((a) => {
+            {studentAgents.length === 0 && (
+              <div className="rounded-lg bg-accent/60 p-3 text-sm leading-relaxed text-muted-foreground">
+                Add your subjects in your study profile to open the right tutors.
+              </div>
+            )}
+            {studentAgents.map((a) => {
               const Icon = tutorIcons[a.icon as keyof typeof tutorIcons] ?? BookOpen;
               const active = a.id === agent.id;
               return (
@@ -270,7 +302,13 @@ function ChatPage() {
         <main className="study-main flex h-[calc(100vh-140px)] flex-col">
           <div className="mb-3">
             <div className="app-eyebrow">Study Desk</div>
-            <h1 className="font-serif text-3xl">{agent.name}</h1>
+            <h1 className="font-serif text-3xl">
+              {studentAgents.length ? agent.name : "Choose your subjects"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {studentLevel}
+              {studentLevel === "University" && studentDegree ? ` · ${studentDegree}` : ""}
+            </p>
           </div>
 
           {search.title && (
@@ -286,7 +324,18 @@ function ChatPage() {
             ref={scrollRef}
             className="study-conversation flex-1 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-6"
           >
-            {messages.length === 0 ? (
+            {!studentAgents.length ? (
+              <div className="mx-auto max-w-lg py-12 text-center">
+                <h3 className="font-serif text-2xl">Set up your study profile</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Choose your school subjects or the modules in your degree. Your study desk will
+                  show only those tutors.
+                </p>
+                <Button asChild className="mt-5">
+                  <Link to="/profile">Manage study profile</Link>
+                </Button>
+              </div>
+            ) : messages.length === 0 ? (
               <EmptyState agent={agent} onExample={(q) => setInput(q)} />
             ) : (
               messages.map((m, i) => <MessageBubble key={i} m={m} />)
@@ -302,7 +351,12 @@ function ChatPage() {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={`Ask ${agent.name.replace(" Tutor", "")} anything…`}
+                placeholder={
+                  studentAgents.length
+                    ? `Ask ${agent.name.replace(" Tutor", "")} anything…`
+                    : "Choose your subjects in your profile first"
+                }
+                disabled={!studentAgents.length}
                 className="min-h-[52px] resize-none border-0 shadow-none focus-visible:ring-0"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -313,7 +367,7 @@ function ChatPage() {
               />
               <Button
                 onClick={sendMessage}
-                disabled={!input.trim() || streaming}
+                disabled={!input.trim() || streaming || !studentAgents.length}
                 size="icon"
                 className="h-10 w-10 shrink-0 bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
               >

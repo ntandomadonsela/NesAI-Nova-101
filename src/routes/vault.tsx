@@ -164,7 +164,7 @@ function Vault() {
 
       <div className="nesai-app-page mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
-        <aside className="paper-card vault-filters sticky top-24 h-fit p-6">
+        <aside className="paper-card vault-filters h-fit p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-lg">Filters</h2>
             {activeCount > 0 && (

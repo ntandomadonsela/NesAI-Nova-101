@@ -7,6 +7,7 @@ import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DEGREE_SUGGESTIONS, LEVELS, subjectsForLevel } from "@/lib/study-catalog";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -21,8 +22,6 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
-const LEVELS = ["Grade 10", "Grade 11", "Grade 12", "University"];
-
 function ProfilePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -34,6 +33,11 @@ function ProfilePage() {
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [name, setName] = useState("");
   const [level, setLevel] = useState("Grade 12");
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [otherSubject, setOtherSubject] = useState("");
+  const [degreeName, setDegreeName] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [studyYear, setStudyYear] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -58,7 +62,9 @@ function ProfilePage() {
 
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("full_name, academic_level, is_premium")
+        .select(
+          "full_name, academic_level, is_premium, subjects, degree_name, institution, study_year",
+        )
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
@@ -68,6 +74,10 @@ function ProfilePage() {
         setName(profile.full_name);
         setLevel(profile.academic_level ?? "Grade 12");
         setIsPremium(profile.is_premium);
+        setSubjects(profile.subjects ?? []);
+        setDegreeName(profile.degree_name ?? "");
+        setInstitution(profile.institution ?? "");
+        setStudyYear(profile.study_year ?? "");
       }
       setLoading(false);
     }
@@ -85,7 +95,15 @@ function ProfilePage() {
       const { error } = await supabase
         .from("profiles")
         .upsert(
-          { id: userId, full_name: name.trim(), academic_level: level },
+          {
+            id: userId,
+            full_name: name.trim(),
+            academic_level: level,
+            subjects,
+            degree_name: level === "University" ? degreeName.trim() : null,
+            institution: level === "University" ? institution.trim() : null,
+            study_year: level === "University" ? studyYear.trim() : null,
+          },
           { onConflict: "id" },
         );
       if (error) throw error;
@@ -229,12 +247,92 @@ function ProfilePage() {
                 <select
                   id="profile-level"
                   value={level}
-                  onChange={(event) => setLevel(event.target.value)}
+                  onChange={(event) => {
+                    setLevel(event.target.value);
+                    setSubjects([]);
+                  }}
                 >
                   {LEVELS.map((item) => (
                     <option key={item}>{item}</option>
                   ))}
                 </select>
+              </div>
+              {level === "University" && (
+                <>
+                  <div>
+                    <Label htmlFor="profile-degree">Degree or qualification</Label>
+                    <input
+                      id="profile-degree"
+                      list="profile-degree-options"
+                      value={degreeName}
+                      onChange={(event) => setDegreeName(event.target.value)}
+                      placeholder="e.g. BSc Computer Science"
+                      required
+                    />
+                    <datalist id="profile-degree-options">
+                      {DEGREE_SUGGESTIONS.map((degree) => (
+                        <option key={degree}>{degree}</option>
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <Label htmlFor="profile-institution">University or institution</Label>
+                    <Input
+                      id="profile-institution"
+                      value={institution}
+                      onChange={(event) => setInstitution(event.target.value)}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profile-year">Year of study</Label>
+                    <Input
+                      id="profile-year"
+                      value={studyYear}
+                      onChange={(event) => setStudyYear(event.target.value)}
+                      placeholder="Optional, e.g. Year 2"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <Label>Your {level === "University" ? "degree modules" : "subjects"}</Label>
+                <div className="mt-2 grid max-h-56 grid-cols-1 gap-2 overflow-y-auto rounded-md border border-input bg-background p-3 sm:grid-cols-2">
+                  {[
+                    ...subjectsForLevel(level),
+                    ...subjects.filter((item) => !subjectsForLevel(level).includes(item)),
+                  ].map((item) => (
+                    <label key={item} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={subjects.includes(item)}
+                        onChange={(event) =>
+                          setSubjects((old) =>
+                            event.target.checked
+                              ? [...old, item]
+                              : old.filter((subject) => subject !== item),
+                          )
+                        }
+                      />
+                      {item}
+                    </label>
+                  ))}
+                </div>
+                <Input
+                  className="mt-2"
+                  aria-label="Add another subject or module"
+                  value={otherSubject}
+                  placeholder="Add another subject / module, then press Enter"
+                  onChange={(event) => setOtherSubject(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      const value = otherSubject.trim();
+                      if (value && !subjects.includes(value)) setSubjects((old) => [...old, value]);
+                      setOtherSubject("");
+                    }
+                  }}
+                />
               </div>
               <Button type="submit" disabled={savingProfile} className="profile-submit">
                 {savingProfile ? "Saving…" : "Save study profile"}

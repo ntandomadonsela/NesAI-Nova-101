@@ -59,6 +59,32 @@ export const SUBJECT_AGENTS: SubjectAgent[] = [
 
 export const DEFAULT_AGENT = SUBJECT_AGENTS[0];
 
+export function createSubjectAgent(subject: string, level: string): SubjectAgent {
+  const id = `subject-${subject
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")}`;
+  return {
+    id,
+    name: `${subject} Tutor`,
+    short: level === "University" ? "Your degree module" : `${level} curriculum support`,
+    icon: /math|calculus|statistics/i.test(subject)
+      ? "Sigma"
+      : /science|physics|chemistry|biology/i.test(subject)
+        ? "Atom"
+        : /law/i.test(subject)
+          ? "Scale"
+          : /account|business|econom|commerce|finance/i.test(subject)
+            ? "TrendingUp"
+            : "BookOpen",
+    systemPrompt: `You are the NesAI ${subject} tutor supporting a South African ${level} student. Match the explanation to the student's level and this exact subject. Teach clearly in small steps, check understanding, explain unfamiliar terms, and help the student reason rather than simply giving answers. For school learners, align to the South African CAPS/DBE curriculum and NSC assessment style. For university students, stay within the named module and ask for the institution/module outline when outcomes differ. Never invent curriculum requirements, facts, or citations; say when you are uncertain. Use examples relevant to South Africa when useful. Format equations in LaTeX.`,
+  };
+}
+
+export function createStudentAgents(subjects: string[], level: string): SubjectAgent[] {
+  return subjects.map((subject) => createSubjectAgent(subject, level));
+}
+
 export function getAgent(id: string | null | undefined): SubjectAgent {
   return SUBJECT_AGENTS.find((a) => a.id === id) ?? DEFAULT_AGENT;
 }
