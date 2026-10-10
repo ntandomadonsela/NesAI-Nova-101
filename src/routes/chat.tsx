@@ -91,6 +91,8 @@ function ChatPage() {
   const [profileError, setProfileError] = useState("");
   const [showLimit, setShowLimit] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Keep a usable tutor available while profile subjects are loading or missing.
+  const availableAgents = studentAgents.length ? studentAgents : [getAgent("general")];
 
   const refreshStudyProfile = useCallback(async () => {
     setProfileLoading(true);
@@ -99,7 +101,7 @@ function ChatPage() {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       if (!sessionData.session) {
-        navigate({ to: "/auth", search: { redirect: "/chat" } as any });
+        navigate({ to: "/auth", search: { redirect: "/chat" } });
         return;
       }
 
@@ -133,6 +135,7 @@ function ChatPage() {
       });
     } catch (error) {
       setStudentAgents([]);
+      setAgent(getAgent("general"));
       setProfileError(error instanceof Error ? error.message : "We couldn’t load your subjects.");
     } finally {
       setReady(true);
@@ -175,7 +178,7 @@ function ChatPage() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || streaming || !studentAgents.length) return;
+    if (!text || streaming) return;
 
     const nextMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
@@ -186,7 +189,7 @@ function ChatPage() {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       if (!token) {
-        navigate({ to: "/auth", search: { redirect: "/chat" } as any });
+        navigate({ to: "/auth", search: { redirect: "/chat" } });
         return;
       }
 
@@ -199,7 +202,9 @@ function ChatPage() {
         body: JSON.stringify({
           messages: nextMessages,
           agentId: agent.id,
-          subjectName: agent.name.replace(/ Tutor$/, ""),
+          ...(agent.id.startsWith("subject-")
+            ? { subjectName: agent.name.replace(/ Tutor$/, "") }
+            : {}),
           resourceContext: search.title
             ? {
                 id: search.resource,
@@ -261,8 +266,8 @@ function ChatPage() {
           setMessages([...nextMessages, { role: "assistant", content: assistant }]);
         }
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Something went wrong");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
       setMessages(nextMessages);
     } finally {
       setStreaming(false);
@@ -291,7 +296,8 @@ function ChatPage() {
           <div className="space-y-1">
             {profileError ? (
               <div className="rounded-lg bg-destructive/10 p-3 text-sm leading-relaxed text-destructive">
-                We couldn’t load your saved subjects. {profileError}
+                Your saved subjects could not be loaded, so the General Study Coach is available.{" "}
+                {profileError}
                 <button
                   type="button"
                   className="mt-2 block font-semibold underline"
@@ -309,7 +315,7 @@ function ChatPage() {
                 </div>
               )
             )}
-            {studentAgents.map((a) => {
+            {availableAgents.map((a) => {
               const Icon = tutorIcons[a.icon as keyof typeof tutorIcons] ?? BookOpen;
               const active = a.id === agent.id;
               return (
@@ -348,9 +354,7 @@ function ChatPage() {
         <main className="study-main flex h-[calc(100vh-140px)] flex-col">
           <div className="mb-3">
             <div className="app-eyebrow">Study Desk</div>
-            <h1 className="font-serif text-3xl">
-              {studentAgents.length ? agent.name : "Choose your subjects"}
-            </h1>
+            <h1 className="font-serif text-3xl">{agent.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {studentLevel}
               {studentLevel === "University" && studentDegree ? ` · ${studentDegree}` : ""}
@@ -370,26 +374,18 @@ function ChatPage() {
             ref={scrollRef}
             className="study-conversation flex-1 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-6"
           >
-            {profileError ? (
-              <div className="mx-auto max-w-lg py-12 text-center">
-                <h3 className="font-serif text-2xl">Couldn’t load your study profile</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{profileError}</p>
-                <Button className="mt-5" onClick={() => void refreshStudyProfile()}>
-                  Reload subjects
-                </Button>
-              </div>
-            ) : profileLoading && !studentAgents.length ? (
+            {profileLoading && !studentAgents.length ? (
               <div className="py-12 text-center text-sm text-muted-foreground">
-                Loading your saved subjects…
+                Loading your saved subjects… The General Study Coach is ready below.
               </div>
-            ) : !studentAgents.length ? (
-              <div className="mx-auto max-w-lg py-12 text-center">
-                <h3 className="font-serif text-2xl">Set up your study profile</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Choose your school subjects or the modules in your degree. Your study desk will
-                  show only those tutors.
+            ) : !studentAgents.length && messages.length === 0 ? (
+              <div className="mb-5 rounded-lg border border-primary/15 bg-accent/40 p-4 text-center">
+                <h3 className="font-serif text-xl">Your General Study Coach is ready</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You can start typing now. Add your subjects to your profile to unlock dedicated
+                  tutors.
                 </p>
-                <Button asChild className="mt-5">
+                <Button asChild variant="outline" size="sm" className="mt-3">
                   <Link to="/profile">Manage study profile</Link>
                 </Button>
               </div>
@@ -409,12 +405,7 @@ function ChatPage() {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  studentAgents.length
-                    ? `Ask ${agent.name.replace(" Tutor", "")} anything…`
-                    : "Choose your subjects in your profile first"
-                }
-                disabled={!studentAgents.length}
+                placeholder={`Ask ${agent.name.replace(" Tutor", "")} anything…`}
                 className="min-h-[52px] resize-none border-0 shadow-none focus-visible:ring-0"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -425,7 +416,7 @@ function ChatPage() {
               />
               <Button
                 onClick={sendMessage}
-                disabled={!input.trim() || streaming || !studentAgents.length}
+                disabled={!input.trim() || streaming}
                 size="icon"
                 className="h-10 w-10 shrink-0 bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
               >
