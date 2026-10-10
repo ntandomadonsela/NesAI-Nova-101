@@ -24,6 +24,9 @@ address or deliver email by itself.
 5. In **Authentication → URL Configuration**, set the production Site URL and add
    the production domain and any Vercel preview domains to the redirect URL allow
    list. The app sends users back to `/auth?redirect=%2Fchat` after they confirm.
+   In Vercel, set `VITE_APP_URL` to the stable production origin (for example,
+   `https://your-app.vercel.app`) and redeploy. Do not include `localhost` here.
+   Keep the production Site URL and redirect allow-list pointed at that same site.
 6. Save the settings and request a new confirmation email from the sign-up page.
    Check the email provider's delivery log if the message still does not arrive.
 

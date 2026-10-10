@@ -29,30 +29,31 @@ Vercel creates preview deployments from branches and pull requests, and producti
 
 Use `.env.example` as the source of truth. Never commit `.env` or put secrets in a `VITE_` variable. Set the same Supabase project URL and publishable/anon key in both the public and server variables because the browser client and authenticated server routes read them separately.
 
-| Variable | Required for | Visibility |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | Browser sign-in, Vault, and uploads | Public |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser sign-in, Vault, and uploads | Public; use the Supabase publishable/anon key only |
-| `SUPABASE_URL` | Server-side auth and data routes | Server only |
-| `SUPABASE_PUBLISHABLE_KEY` | Server-side user-scoped Supabase requests | Server only; same publishable/anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Trusted server admin writes, AI indexing, and billing records | **Secret; service role key** |
-| `AI_GATEWAY_API_KEY` | AI tutor responses | **Secret** |
-| `AI_GATEWAY_BASE_URL` | Optional non-OpenAI-compatible provider URL | Server only; defaults to OpenAI |
-| `AI_GATEWAY_MODEL` | Optional model override | Server only; defaults to `gpt-4o-mini` |
-| `VITE_PAYPAL_CLIENT_ID` | PayPal checkout button | Public |
-| `VITE_PAYPAL_PLAN_ID` | PayPal subscription plan | Public identifier |
-| `PAYPAL_CLIENT_ID` | Server-side PayPal API verification | Server only |
-| `PAYPAL_CLIENT_SECRET` | Server-side PayPal API verification | **Secret** |
-| `PAYPAL_ENV` | Select `sandbox` or `live` PayPal API | Server only |
-| `PAYPAL_WEBHOOK_ID` | Verify PayPal webhook signatures | **Secret** |
-| `LEADS_WEBHOOK_URL` | Optional delivery for contact enquiries | **Secret** |
+| Variable                        | Required for                                                  | Visibility                                                     |
+| ------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`             | Browser sign-in, Vault, and uploads                           | Public                                                         |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser sign-in, Vault, and uploads                           | Public; use the Supabase publishable/anon key only             |
+| `VITE_APP_URL`                  | Canonical origin for Supabase auth callback links             | Public; set to the production Vercel URL with no trailing path |
+| `SUPABASE_URL`                  | Server-side auth and data routes                              | Server only                                                    |
+| `SUPABASE_PUBLISHABLE_KEY`      | Server-side user-scoped Supabase requests                     | Server only; same publishable/anon key                         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Trusted server admin writes, AI indexing, and billing records | **Secret; service role key**                                   |
+| `AI_GATEWAY_API_KEY`            | AI tutor responses                                            | **Secret**                                                     |
+| `AI_GATEWAY_BASE_URL`           | Optional non-OpenAI-compatible provider URL                   | Server only; defaults to OpenAI                                |
+| `AI_GATEWAY_MODEL`              | Optional model override                                       | Server only; defaults to `gpt-4o-mini`                         |
+| `VITE_PAYPAL_CLIENT_ID`         | PayPal checkout button                                        | Public                                                         |
+| `VITE_PAYPAL_PLAN_ID`           | PayPal subscription plan                                      | Public identifier                                              |
+| `PAYPAL_CLIENT_ID`              | Server-side PayPal API verification                           | Server only                                                    |
+| `PAYPAL_CLIENT_SECRET`          | Server-side PayPal API verification                           | **Secret**                                                     |
+| `PAYPAL_ENV`                    | Select `sandbox` or `live` PayPal API                         | Server only                                                    |
+| `PAYPAL_WEBHOOK_ID`             | Verify PayPal webhook signatures                              | **Secret**                                                     |
+| `LEADS_WEBHOOK_URL`             | Optional delivery for contact enquiries                       | **Secret**                                                     |
 
 The AI, Supabase, and PayPal values come from those providers' project/app settings. `LEADS_WEBHOOK_URL` is optional; without it, the endpoint accepts submissions in development mode but does not forward them to a CRM.
 
 ### Service setup required before launch
 
 - **Supabase database:** run every SQL migration in `supabase/migrations/` in filename order. The latest migration creates the Vault tables, document chunks, and the public-read/admin-write `resource-files` storage bucket.
-- **Supabase Auth:** set the production Site URL to your deployed domain, then allow the production URL, your Vercel preview URL pattern, and local development URL under redirect URLs. Add `/auth?redirect=%2Fchat` for each hostname (or a matching `/auth*` pattern) so email confirmation returns users to sign-in and then opens their study desk.
+- **Supabase Auth:** set the production Site URL to your deployed domain, then allow the production URL, your Vercel preview URL pattern, and local development URL under redirect URLs. Add `/auth*` for each hostname so email confirmation returns users to sign-in and then opens their study desk. Set `VITE_APP_URL` in Vercel to the stable production origin (for example, `https://your-app.vercel.app`) and redeploy; this prevents confirmation requests created from a local or preview page from redirecting to localhost or a temporary preview URL.
 - **Supabase admin:** after creating your account, assign its user UUID the `admin` role in `public.user_roles` to access `/admin/upload`.
 - **AI provider:** add `AI_GATEWAY_API_KEY`; the chat route returns a configuration error until a provider key is present.
 - **PayPal:** leave `PAYPAL_ENV=sandbox` and use sandbox credentials and a sandbox plan while verifying checkout and webhook flows. Configure the webhook endpoint as `https://<your-domain>/api/payments/paypal-webhook`. Switch all PayPal credentials, plan, webhook ID, and `PAYPAL_ENV=live` together only when ready for real payments.

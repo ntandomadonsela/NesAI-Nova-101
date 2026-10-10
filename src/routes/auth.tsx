@@ -13,6 +13,7 @@ import {
   SCHOOL_SUBJECTS,
   UNIVERSITY_SUBJECTS,
 } from "@/lib/study-catalog";
+import { appUrl } from "@/lib/app-url";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup", "forgot", "recovery"]).optional(),
@@ -81,7 +82,7 @@ function AuthPage() {
     try {
       if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: new URL("/auth?mode=recovery", window.location.origin).toString(),
+          redirectTo: appUrl("/auth?mode=recovery"),
         });
         if (error) throw error;
         setResetSent(true);
@@ -104,7 +105,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: new URL("/auth?redirect=%2Fchat", window.location.origin).toString(),
+            emailRedirectTo: appUrl("/auth?redirect=%2Fchat"),
             data: {
               full_name: fullName,
               academic_level: academicLevel,
@@ -151,7 +152,7 @@ function AuthPage() {
         type: "signup",
         email: pendingSignupEmail,
         options: {
-          emailRedirectTo: new URL("/auth?redirect=%2Fchat", window.location.origin).toString(),
+          emailRedirectTo: appUrl("/auth?redirect=%2Fchat"),
         },
       });
       if (error) throw error;

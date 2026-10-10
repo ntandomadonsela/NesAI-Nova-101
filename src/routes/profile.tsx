@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEGREE_SUGGESTIONS, LEVELS, subjectsForLevel } from "@/lib/study-catalog";
+import { appUrl } from "@/lib/app-url";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -92,20 +93,18 @@ function ProfilePage() {
     if (!userId) return;
     setSavingProfile(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: userId,
-            full_name: name.trim(),
-            academic_level: level,
-            subjects,
-            degree_name: level === "University" ? degreeName.trim() : null,
-            institution: level === "University" ? institution.trim() : null,
-            study_year: level === "University" ? studyYear.trim() : null,
-          },
-          { onConflict: "id" },
-        );
+      const { error } = await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          full_name: name.trim(),
+          academic_level: level,
+          subjects,
+          degree_name: level === "University" ? degreeName.trim() : null,
+          institution: level === "University" ? institution.trim() : null,
+          study_year: level === "University" ? studyYear.trim() : null,
+        },
+        { onConflict: "id" },
+      );
       if (error) throw error;
       toast.success("Your study profile has been updated.");
     } catch (error) {
@@ -126,7 +125,7 @@ function ProfilePage() {
     try {
       const { error } = await supabase.auth.updateUser(
         { email: nextEmail },
-        { emailRedirectTo: new URL("/profile", window.location.origin).toString() },
+        { emailRedirectTo: appUrl("/profile") },
       );
       if (error) throw error;
       toast.success("Check your inboxes to confirm the email change.");
