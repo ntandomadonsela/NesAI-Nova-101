@@ -46,6 +46,13 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Profile not found", { status: 404 });
         }
 
+        const gatewayKey = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY;
+        if (!gatewayKey) {
+          return new Response("AI provider key is missing from the server environment.", {
+            status: 500,
+          });
+        }
+
         // Reset counter if >24h since last_reset
         const now = new Date();
         const lastReset = new Date(profile.last_reset);
@@ -148,10 +155,6 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         // 5. Call the configured AI gateway
-        const gatewayKey = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY;
-        if (!gatewayKey) {
-          return new Response("Missing AI_GATEWAY_API_KEY or OPENAI_API_KEY", { status: 500 });
-        }
         const gateway = createAiGateway(gatewayKey, process.env.AI_GATEWAY_BASE_URL);
 
         try {

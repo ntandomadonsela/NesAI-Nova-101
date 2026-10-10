@@ -198,7 +198,8 @@ function ChatPage() {
         return;
       }
       if (!res.ok || !res.body) {
-        throw new Error(`Request failed (${res.status})`);
+        const details = (await res.text()).trim();
+        throw new Error(details || `The tutor request failed (${res.status}).`);
       }
 
       const reader = res.body.getReader();
