@@ -148,9 +148,9 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         // 5. Call the configured AI gateway
-        const gatewayKey = process.env.AI_GATEWAY_API_KEY;
+        const gatewayKey = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY;
         if (!gatewayKey) {
-          return new Response("Missing AI_GATEWAY_API_KEY", { status: 500 });
+          return new Response("Missing AI_GATEWAY_API_KEY or OPENAI_API_KEY", { status: 500 });
         }
         const gateway = createAiGateway(gatewayKey, process.env.AI_GATEWAY_BASE_URL);
 

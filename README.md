@@ -37,7 +37,7 @@ Use `.env.example` as the source of truth. Never commit `.env` or put secrets in
 | `SUPABASE_URL`                  | Server-side auth and data routes                              | Server only                                                    |
 | `SUPABASE_PUBLISHABLE_KEY`      | Server-side user-scoped Supabase requests                     | Server only; same publishable/anon key                         |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Trusted server admin writes, AI indexing, and billing records | **Secret; service role key**                                   |
-| `AI_GATEWAY_API_KEY`            | AI tutor responses                                            | **Secret**                                                     |
+| `AI_GATEWAY_API_KEY` or `OPENAI_API_KEY` | AI tutor responses                                  | **Secret**                                                     |
 | `AI_GATEWAY_BASE_URL`           | Optional non-OpenAI-compatible provider URL                   | Server only; defaults to OpenAI                                |
 | `AI_GATEWAY_MODEL`              | Optional model override                                       | Server only; defaults to `gpt-4o-mini`                         |
 | `VITE_PAYPAL_CLIENT_ID`         | PayPal checkout button                                        | Public                                                         |
