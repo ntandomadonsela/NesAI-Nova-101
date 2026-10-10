@@ -8,7 +8,7 @@ const FREE_DAILY_LIMIT = 5;
 const STREAM_ERROR_MARKER = "\n[[NESAI_STREAM_ERROR]]";
 // Model id format depends on your provider, e.g. "gpt-4o-mini" for OpenAI,
 // "google/gemini-2.5-flash" for OpenRouter. Override via AI_GATEWAY_MODEL.
-const MODEL_ID = process.env.AI_GATEWAY_MODEL ?? "gpt-4o-mini";
+const MODEL_ID = process.env.AI_GATEWAY_MODEL?.trim() || "gpt-4o-mini";
 
 function getProviderErrorMessage(error: unknown): string {
   const status =
@@ -39,9 +39,11 @@ export const Route = createFileRoute("/api/chat")({
         // Vercel projects are often configured with the public VITE_ names only.
         // These values are safe for a user-scoped client; the bearer token still
         // enforces RLS. Prefer the server names when both are configured.
-        const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+        const supabaseUrl =
+          process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
         const publishableKey =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          process.env.SUPABASE_PUBLISHABLE_KEY?.trim() ||
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
         if (!supabaseUrl || !publishableKey) {
           return Response.json(
             {
@@ -84,7 +86,8 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Profile not found", { status: 404 });
         }
 
-        const gatewayKey = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY;
+        const gatewayKey =
+          process.env.AI_GATEWAY_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
         if (!gatewayKey) {
           return Response.json(
             {
@@ -199,7 +202,10 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         // 4. Call the configured AI gateway
-        const gateway = createAiGateway(gatewayKey, process.env.AI_GATEWAY_BASE_URL);
+        const gateway = createAiGateway(
+          gatewayKey,
+          process.env.AI_GATEWAY_BASE_URL?.trim() || undefined,
+        );
 
         try {
           const result = streamText({
