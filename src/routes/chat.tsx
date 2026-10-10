@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -87,42 +87,72 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [ready, setReady] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
   const [showLimit, setShowLimit] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auth check
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) {
+  const refreshStudyProfile = useCallback(async () => {
+    setProfileLoading(true);
+    setProfileError("");
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) {
         navigate({ to: "/auth", search: { redirect: "/chat" } as any });
-      } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("academic_level, subjects, degree_name")
-          .eq("id", data.session.user.id)
-          .maybeSingle();
-        const level = profile?.academic_level ?? "Grade 12";
-        const subjects = profile?.subjects ?? [];
-        const agents = createStudentAgents(subjects, level);
-        setStudentLevel(level);
-        setStudentDegree(profile?.degree_name ?? "");
-        setStudentAgents(agents);
-        if (
-          initialAgentId?.startsWith("subject-") &&
-          agents.some((item) => item.id === initialAgentId)
-        )
-          setAgent(agents.find((item) => item.id === initialAgentId)!);
-        else if (search.subject) {
-          const found = agents.find((item) =>
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("academic_level, subjects, degree_name")
+        .eq("id", sessionData.session.user.id)
+        .maybeSingle();
+      if (error) throw error;
+
+      const level = profile?.academic_level ?? "Grade 12";
+      const subjects = profile?.subjects ?? [];
+      const agents = createStudentAgents(subjects, level);
+      setStudentLevel(level);
+      setStudentDegree(profile?.degree_name ?? "");
+      setStudentAgents(agents);
+      setAgent((current) => {
+        if (agents.some((item) => item.id === current.id))
+          return agents.find((item) => item.id === current.id)!;
+        if (initialAgentId?.startsWith("subject-")) {
+          const initial = agents.find((item) => item.id === initialAgentId);
+          if (initial) return initial;
+        }
+        if (search.subject) {
+          const matching = agents.find((item) =>
             item.name.toLowerCase().startsWith(search.subject!.toLowerCase()),
           );
-          setAgent(found ?? agents[0] ?? getAgent("general"));
-        } else if (agents.length) setAgent(agents[0]);
-        else setAgent(getAgent("general"));
-        setReady(true);
-      }
-    });
+          if (matching) return matching;
+        }
+        return agents[0] ?? getAgent("general");
+      });
+    } catch (error) {
+      setStudentAgents([]);
+      setProfileError(error instanceof Error ? error.message : "We couldn’t load your subjects.");
+    } finally {
+      setReady(true);
+      setProfileLoading(false);
+    }
   }, [navigate, initialAgentId, search.subject]);
+
+  useEffect(() => {
+    void refreshStudyProfile();
+  }, [refreshStudyProfile]);
+
+  useEffect(() => {
+    const refresh = () => void refreshStudyProfile();
+    window.addEventListener("nesai:study-profile-updated", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("nesai:study-profile-updated", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [refreshStudyProfile]);
 
   // Preload resource context if arrived from vault
   useEffect(() => {
@@ -259,10 +289,25 @@ function ChatPage() {
             <h2 className="font-serif text-lg">Subject Tutors</h2>
           </div>
           <div className="space-y-1">
-            {studentAgents.length === 0 && (
-              <div className="rounded-lg bg-accent/60 p-3 text-sm leading-relaxed text-muted-foreground">
-                Add your subjects in your study profile to open the right tutors.
+            {profileError ? (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm leading-relaxed text-destructive">
+                We couldn’t load your saved subjects. {profileError}
+                <button
+                  type="button"
+                  className="mt-2 block font-semibold underline"
+                  onClick={() => void refreshStudyProfile()}
+                >
+                  Try again
+                </button>
               </div>
+            ) : (
+              studentAgents.length === 0 && (
+                <div className="rounded-lg bg-accent/60 p-3 text-sm leading-relaxed text-muted-foreground">
+                  {profileLoading
+                    ? "Loading your saved subjects…"
+                    : "Add your subjects in your study profile to open the right tutors."}
+                </div>
+              )
             )}
             {studentAgents.map((a) => {
               const Icon = tutorIcons[a.icon as keyof typeof tutorIcons] ?? BookOpen;
@@ -325,7 +370,19 @@ function ChatPage() {
             ref={scrollRef}
             className="study-conversation flex-1 space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-6"
           >
-            {!studentAgents.length ? (
+            {profileError ? (
+              <div className="mx-auto max-w-lg py-12 text-center">
+                <h3 className="font-serif text-2xl">Couldn’t load your study profile</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{profileError}</p>
+                <Button className="mt-5" onClick={() => void refreshStudyProfile()}>
+                  Reload subjects
+                </Button>
+              </div>
+            ) : profileLoading && !studentAgents.length ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Loading your saved subjects…
+              </div>
+            ) : !studentAgents.length ? (
               <div className="mx-auto max-w-lg py-12 text-center">
                 <h3 className="font-serif text-2xl">Set up your study profile</h3>
                 <p className="mt-2 text-sm text-muted-foreground">

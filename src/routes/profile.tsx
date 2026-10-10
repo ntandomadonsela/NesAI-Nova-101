@@ -106,6 +106,7 @@ function ProfilePage() {
         { onConflict: "id" },
       );
       if (error) throw error;
+      window.dispatchEvent(new Event("nesai:study-profile-updated"));
       toast.success("Your study profile has been updated.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "We couldn’t save your profile.");
