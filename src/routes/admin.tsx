@@ -23,7 +23,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin Dashboard — NesAI Nova" }] }),
+  head: () => ({
+    meta: [
+      { title: "NesAI Administration" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminDashboard,
 });
 

@@ -18,11 +18,34 @@ import { useState } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NesAI — Intelligence, deployed at scale" },
+      { title: "NesAI: AI Study Platform for South African Students" },
       {
         name: "description",
         content:
-          "Your personal AI study partner. Get clear, step-by-step help across subjects, exam papers and study notes.",
+          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
+      },
+      { property: "og:site_name", content: "NesAI" },
+      { property: "og:title", content: "NesAI: AI Study Platform for South African Students" },
+      {
+        property: "og:description",
+        content:
+          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://nesai.co.za/" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://nesai.co.za/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "NesAI",
+          alternateName: "NesAI Student",
+          url: "https://nesai.co.za/",
+        }),
       },
     ],
   }),

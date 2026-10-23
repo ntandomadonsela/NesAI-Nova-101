@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative proposed 36 square metre split suite</title><desc id="desc">Original concept floor plan with two private lockable bedrooms, each with an ensuite, flanking a shared kitchen and lounge.</desc>
+  <rect width="1000" height="700" fill="#e8e5de"/><text x="72" y="70" font-family="Arial,sans-serif" font-size="19" font-weight="700" letter-spacing="4" fill="#575951">PROPOSED SPLIT SUITE · 36 m²</text>
+  <g fill="#f9f8f4" stroke="#242824" stroke-width="12">
+    <path d="M85 124h830v470H85z"/><path d="M365 124v470m270-470v470M85 400h280m270 0h280"/>
+  </g>
+  <!-- private sleeping rooms -->
+  <g fill="#d4c6b0" stroke="#9b8a70" stroke-width="5"><rect x="123" y="168" width="177" height="145" rx="3"/><rect x="700" y="168" width="177" height="145" rx="3"/></g>
+  <g fill="#f7f4ec"><rect x="137" y="180" width="147" height="121"/><rect x="714" y="180" width="147" height="121"/></g>
+  <g fill="#b1a18a"><rect x="153" y="207" width="106" height="76" rx="16"/><rect x="729" y="207" width="106" height="76" rx="16"/></g>
+  <g fill="#323834"><rect x="127" y="330" width="62" height="18"/><rect x="811" y="330" width="62" height="18"/><rect x="131" y="355" width="44" height="27" fill="#dedbd3"/><rect x="825" y="355" width="44" height="27" fill="#dedbd3"/></g>
+  <!-- central shared kitchen and dining -->
+  <rect x="405" y="170" width="190" height="54" fill="#d6d3ca" stroke="#8b897f" stroke-width="4"/><path d="M430 183h46v27h-46zm79 0h49v27h-49z" fill="#faf9f5" stroke="#88877f" stroke-width="3"/>
+  <rect x="443" y="278" width="116" height="58" rx="8" fill="#b5a184"/><circle cx="501" cy="306" r="9" fill="#f5f1e7"/>
+  <!-- two compact private bathrooms at the lower outer corners -->
+  <g fill="#d7dedb" stroke="#858b86" stroke-width="4"><rect x="125" y="442" width="199" height="118"/><rect x="676" y="442" width="199" height="118"/></g>
+  <g fill="#f8f8f4" stroke="#9ea39d" stroke-width="3"><rect x="150" y="460" width="61" height="50" rx="18"/><rect x="235" y="470" width="64" height="34" rx="5"/><rect x="702" y="460" width="61" height="50" rx="18"/><rect x="787" y="470" width="64" height="34" rx="5"/></g>
+  <!-- door leaves / circulation -->
+  <g fill="none" stroke="#b38f58" stroke-width="5"><path d="M346 386v76m0-76a76 76 0 0 1 76 76M654 386v76m0-76a76 76 0 0 0-76 76"/><path d="M361 240v62m0-62a62 62 0 0 1 62 62M639 240v62m0-62a62 62 0 0 0 62 62"/></g>
+  <g fill="#3a403b" font-family="Arial,sans-serif" text-anchor="middle" letter-spacing="2">
+    <text x="225" y="148" font-size="15" font-weight="700">PRIVATE BEDROOM 01</text><text x="225" y="578" font-size="12">ENSUITE 01</text>
+    <text x="775" y="148" font-size="15" font-weight="700">PRIVATE BEDROOM 02</text><text x="775" y="578" font-size="12">ENSUITE 02</text>
+    <text x="500" y="255" font-size="14" font-weight="700">SHARED KITCHEN</text><text x="500" y="378" font-size="14" font-weight="700">DINING & LOUNGE</text>
+  </g>
+  <path d="M85 628h830" stroke="#b18f5d" stroke-width="3"/><text x="500" y="664" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" letter-spacing="2" fill="#575951">ILLUSTRATIVE PLANNING STUDY · FINAL LAYOUT SUBJECT TO DESIGN & APPROVAL</text>
+</svg>

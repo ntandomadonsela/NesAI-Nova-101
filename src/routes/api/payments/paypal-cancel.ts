@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/payments/paypal-cancel")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: subscription, error: lookupError } = await supabaseAdmin
           .from("subscriptions")
-          .select("id, user_id, paypal_subscription_id")
+          .select("id, user_id, paypal_subscription_id, current_period_end")
           .eq("id", body.subscriptionId)
           .eq("user_id", userData.user.id)
           .eq("provider", "paypal")
@@ -79,9 +79,25 @@ export const Route = createFileRoute("/api/payments/paypal-cancel")({
           );
         }
 
+        const { data: remaining, error: remainingError } = await supabaseAdmin
+          .from("subscriptions")
+          .select("status,current_period_end")
+          .eq("user_id", userData.user.id)
+          .in("status", ["active", "cancelled"]);
+        if (remainingError) {
+          console.error("Could not refresh remaining Premium access", remainingError);
+          return new Response("The plan was cancelled, but the account could not be refreshed", { status: 500 });
+        }
+        const premiumActive = (remaining ?? []).some(
+          (item) =>
+            item.status === "active" ||
+            (item.status === "cancelled" &&
+              Boolean(item.current_period_end) &&
+              Date.parse(item.current_period_end!) > Date.now()),
+        );
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
-          .update({ is_premium: false })
+          .update({ is_premium: premiumActive })
           .eq("id", userData.user.id);
         if (profileError) {
           console.error("Could not update premium profile after cancellation", profileError);
@@ -90,7 +106,7 @@ export const Route = createFileRoute("/api/payments/paypal-cancel")({
           });
         }
 
-        return Response.json({ ok: true });
+        return Response.json({ ok: true, current_period_end: subscription.current_period_end });
       },
     },
   },

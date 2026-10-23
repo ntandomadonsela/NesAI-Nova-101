@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed modular student village concept</title><desc id="desc">An original architectural illustration of modular two-storey student buildings around a planted courtyard at sunset.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#d9d4cc"/><stop offset=".48" stop-color="#b7b7ae"/><stop offset="1" stop-color="#787c72"/></linearGradient>
+    <linearGradient id="glow" x2="0" y2="1"><stop stop-color="#f1d3a8" stop-opacity=".75"/><stop offset="1" stop-color="#e2b97c" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ground" x2="0" y2="1"><stop stop-color="#68745e"/><stop offset="1" stop-color="#303b34"/></linearGradient>
+    <pattern id="panel" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 0h5M0 0v5" fill="none" stroke="#d0cbbf" stroke-opacity=".16" stroke-width=".5"/></pattern>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h1600v540H0z"/><path fill="url(#glow)" d="M0 40h1600v430H0z"/>
+  <circle cx="1284" cy="158" r="74" fill="#f3dfbf" opacity=".64"/>
+  <path fill="#74796f" opacity=".7" d="M0 385h1600v180H0z"/>
+  <path fill="#85877a" d="M0 442q150-54 298 2t312-4 296 4 355-10 339 8v142H0z" opacity=".63"/>
+  <g fill="#343e37" opacity=".56"><path d="M20 430h170v93H20zM231 414h125v100H231zM1270 415h250v110h-250zM1445 388h115v120h-115z"/><path d="M72 396h12v58H72zm95-24h12v70h-12zm146 12h13v60h-13zm1057 9h12v65h-12zm153-44h12v94h-12z"/></g>
+  <path fill="url(#ground)" d="M0 528h1600v292H0z"/>
+  <!-- upper modular wings: repeated structural bays and visible panel joints -->
+  <g stroke="#191e1c" stroke-width="11" fill="#343b38">
+    <path d="M282 306h372v130H282zM675 274h372v162H675zM1068 302h330v134h-330z"/>
+    <path d="M313 183h341v114H313zM697 162h350v104H697zM1080 193h286v99h-286z"/>
+  </g>
+  <g fill="#d9c9a9" opacity=".83">
+    <path d="M302 326h75v89h-75zm96 0h75v89h-75zm96 0h75v89h-75zm96 0h47v89h-47z"/>
+    <path d="M696 296h76v116h-76zm98 0h75v116h-75zm97 0h75v116h-75zm97 0h64v116h-64z"/>
+    <path d="M1087 321h72v94h-72zm93 0h72v94h-72zm94 0h103v94h-103z"/>
+    <path d="M332 202h70v75h-70zm93 0h70v75h-70zm92 0h116v75H517z"/>
+    <path d="M714 181h78v69h-78zm100 0h78v69h-78zm101 0h112v69H915z"/>
+    <path d="M1097 211h72v65h-72zm94 0h72v65h-72zm95 0h56v65h-56z"/>
+  </g>
+  <g fill="url(#panel)" opacity=".85"><path d="M282 306h372v130H282zM675 274h372v162H675zM1068 302h330v134h-330zM313 183h341v114H313zM697 162h350v104H697zM1080 193h286v99h-286z"/></g>
+  <g stroke="#131816" stroke-width="4" opacity=".85"><path d="M390 183v114m96-114v114m96-114v114M793 162v104m101-104v104m101-104v104M1174 193v99m95-99v99M390 306v130m96-130v130m96-130v130M793 274v162m97-162v162m97-162v162m97-162v162M1177 302v134m94-134v134"/></g>
+  <!-- roof PV and connectors -->
+  <g stroke="#1f2522" stroke-width="6" fill="#252e2d"><path d="M300 173h356l-18-16H320zM686 152h366l-16-15H703zM1073 183h299l-18-15h-263z"/></g>
+  <g stroke="#91a4a2" stroke-width="2" opacity=".7"><path d="M332 162v14m56-14v14m56-14v14m56-14v14m56-14v14m56-14v14M720 141v13m56-13v13m56-13v13m56-13v13m56-13v13m56-13v13M1101 170v13m56-13v13m56-13v13m56-13v13m56-13v13"/></g>
+  <!-- lower modular frontage and passageways -->
+  <g stroke="#171c19" stroke-width="10" fill="#292f2c"><path d="M370 450h335v132H370zM734 450h342v132H734zM1102 448h250v134h-250z"/></g>
+  <g fill="#dfc99e"><path d="M390 470h76v92h-76zm97 0h77v92h-77zm98 0h99v92h-99zM754 470h80v92h-80zm101 0h80v92h-80zm102 0h100v92H957zM1122 468h75v94h-75zm96 0h114v94h-114z"/></g>
+  <g stroke="#171c19" stroke-width="3"><path d="M487 450v132m98-132v132m249-132v132m102-132v132m186-134v134m96-134v134"/></g>
+  <path fill="#b99a68" d="M710 453h24v129h-24zM1077 453h25v129h-25z"/>
+  <!-- campus court, paths and planted beds -->
+  <path fill="#b9ad99" d="M0 665 460 574h680l460 100v48l-479-77H472L0 741z" opacity=".9"/>
+  <path fill="#d1c4aa" d="M590 580h404l190 240H430z" opacity=".72"/>
+  <g fill="#465b42"><ellipse cx="205" cy="633" rx="83" ry="23"/><ellipse cx="1370" cy="625" rx="91" ry="24"/><ellipse cx="1100" cy="727" rx="74" ry="20"/><ellipse cx="400" cy="761" rx="72" ry="20"/><ellipse cx="879" cy="650" rx="48" ry="15"/></g>
+  <g fill="#778969"><circle cx="174" cy="587" r="39"/><circle cx="206" cy="568" r="46"/><circle cx="234" cy="596" r="35"/><circle cx="1340" cy="578" r="42"/><circle cx="1378" cy="555" r="48"/><circle cx="1412" cy="591" r="38"/><circle cx="1080" cy="678" r="32"/><circle cx="1110" cy="665" r="37"/><circle cx="1137" cy="690" r="29"/></g>
+  <g fill="#b5a275"><rect x="515" y="656" width="138" height="13" rx="6"/><rect x="903" y="728" width="158" height="13" rx="6"/><rect x="680" y="604" width="113" height="11" rx="5"/></g>
+  <!-- modular bay markers, deliberately visible on the concept -->
+  <g fill="#f0d5a8" font-family="Arial,sans-serif" font-size="16" letter-spacing="3"><text x="318" y="132">REPEATABLE MODULES</text><text x="1161" y="132">PROPOSED COURTYARD</text></g>
+  <g stroke="#f0d5a8" stroke-width="2" opacity=".8"><path d="M427 140v25M1250 142v33"/></g>
+</svg>

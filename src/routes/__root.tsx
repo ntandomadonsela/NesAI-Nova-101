@@ -81,24 +81,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NesAI — Intelligence, deployed at scale" },
+      { title: "NesAI: AI Study Platform for South African Students" },
       {
         name: "description",
         content:
-          "Your personal AI study partner. Get clear, step-by-step help across subjects, exam papers and study notes.",
+          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
       },
       { name: "author", content: "NesAI" },
-      { property: "og:title", content: "NesAI — Intelligence, deployed at scale" },
+      { property: "og:site_name", content: "NesAI" },
+      { property: "og:title", content: "NesAI: AI Study Platform for South African Students" },
       {
         property: "og:description",
         content:
-          "A personal AI study partner for clearer learning, exam preparation and step-by-step support.",
+          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "en_ZA" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/nesai-favicon.png", type: "image/png", sizes: "128x128" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

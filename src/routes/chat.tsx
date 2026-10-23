@@ -42,11 +42,12 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
-      { title: "AI Study Desk — NesAI Nova" },
+      { title: "AI Study Desk | NesAI" },
       {
         name: "description",
         content: "Chat with a specialist AI tutor for Math, Sciences, Law, Commerce and more.",
       },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   validateSearch: (s) => searchSchema.parse(s),

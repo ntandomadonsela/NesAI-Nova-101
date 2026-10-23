@@ -11,7 +11,7 @@ import { Download, Sparkles, FileText, Search, X } from "lucide-react";
 export const Route = createFileRoute("/vault")({
   head: () => ({
     meta: [
-      { title: "The Vault — Past Papers, Memos & Notes | NesAI Nova" },
+      { title: "Past Papers, Memos and Study Notes | NesAI" },
       {
         name: "description",
         content:

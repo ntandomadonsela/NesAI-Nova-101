@@ -4,7 +4,12 @@ import { Loader2 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/admin/upload")({
-  head: () => ({ meta: [{ title: "Admin Dashboard — NesAI Nova" }] }),
+  head: () => ({
+    meta: [
+      { title: "NesAI Administration" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: LegacyAdminUploadRedirect,
 });
 

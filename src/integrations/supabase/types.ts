@@ -199,6 +199,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      finish_study_ai_request: {
+        Args: {
+          completed: boolean;
+          request_id: string;
+          target_user: string;
+        };
+        Returns: undefined;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -217,6 +225,13 @@ export type Database = {
           content: string;
           chunk_index: number;
         }[];
+      };
+      reserve_study_ai_request: {
+        Args: {
+          request_id: string;
+          target_user: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {

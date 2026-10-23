@@ -8,8 +8,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/upgrade")({
   head: () => ({
     meta: [
-      { title: "Upgrade — NesAI Nova Premium" },
+      { title: "NesAI Premium | Upgrade" },
       { name: "description", content: "Unlock unlimited AI tutoring with NesAI Nova Premium." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: UpgradePage,
@@ -35,6 +36,7 @@ function UpgradePage() {
   const [activeSubscription, setActiveSubscription] = useState<{
     id: string;
     current_period_end: string | null;
+    status: string;
   } | null>(null);
   const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const [subscriptionLoadError, setSubscriptionLoadError] = useState(false);
@@ -53,13 +55,19 @@ function UpgradePage() {
       }
       const { data: subscription, error } = await supabase
         .from("subscriptions")
-        .select("id, current_period_end")
-        .eq("status", "active")
+        .select("id, current_period_end, status")
+        .in("status", ["active", "pending", "cancelled"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (!cancelled) {
-        setActiveSubscription(subscription);
+        const stillEntitled =
+          subscription?.status === "active" ||
+          subscription?.status === "pending" ||
+          (subscription?.status === "cancelled" &&
+            Boolean(subscription.current_period_end) &&
+            Date.parse(subscription.current_period_end!) > Date.now());
+        setActiveSubscription(stillEntitled ? subscription : null);
         setSubscriptionLoadError(Boolean(error));
         setSubscriptionLoaded(true);
       }
@@ -90,8 +98,8 @@ function UpgradePage() {
         body: JSON.stringify({ subscriptionId: activeSubscription.id }),
       });
       if (!response.ok) throw new Error(await response.text());
-      setActiveSubscription(null);
-      toast.success("Your Premium subscription has been cancelled.");
+      setActiveSubscription((current) => current ? { ...current, status: "cancelled" } : current);
+      toast.success("Renewal cancelled. Premium stays available until the paid period ends.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not cancel your subscription.");
     } finally {
@@ -114,7 +122,7 @@ function UpgradePage() {
     const script = document.createElement("script");
     // vault=true + intent=subscription renders both the PayPal button AND a
     // "Debit or Credit Card" button, so no separate card processor is needed.
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&vault=true&intent=subscription`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription&currency=ZAR&enable-funding=card`;
     script.async = true;
     script.onload = () => {
       const paypal = (window as unknown as { paypal?: PayPalNamespace }).paypal;
@@ -144,7 +152,29 @@ function UpgradePage() {
                 body: JSON.stringify({ subscriptionId: data.subscriptionID }),
               });
               if (!res.ok) throw new Error(await res.text());
-              toast.success("Welcome to Premium! Unlimited tutoring, unlocked.");
+              const activation = (await res.json()) as { pending?: boolean };
+              if (activation.pending) {
+                toast.info("Payment is being confirmed. We’ll unlock Premium as soon as PayPal confirms it.");
+                setStatus("processing");
+                for (let attempt = 0; attempt < 8; attempt += 1) {
+                  await new Promise((resolve) => setTimeout(resolve, 2500));
+                  const { data: refreshed, error: refreshError } = await supabase
+                    .from("subscriptions")
+                    .select("id,current_period_end,status")
+                    .eq("paypal_subscription_id", data.subscriptionID)
+                    .maybeSingle();
+                  if (!refreshError && refreshed?.status === "active") {
+                    setActiveSubscription(refreshed);
+                    toast.success("Payment confirmed. Premium tutoring is unlocked.");
+                    navigate({ to: "/chat" });
+                    return;
+                  }
+                }
+                setActiveSubscription({ id: data.subscriptionID, current_period_end: null, status: "pending" });
+                setStatus("idle");
+                return;
+              }
+              toast.success("Payment confirmed. Premium tutoring is unlocked.");
               navigate({ to: "/chat" });
             } catch (err) {
               console.error(err);
@@ -184,8 +214,7 @@ function UpgradePage() {
             Study without limits.
           </h1>
           <p className="mt-3 text-muted-foreground">
-            One monthly subscription. Cancel anytime. Pay with PayPal or a debit/credit card — both
-            options appear in the checkout below.
+            R50 per month. Cancel anytime. Pay with PayPal or, when eligible, a debit or credit card.
           </p>
         </div>
 
@@ -195,9 +224,9 @@ function UpgradePage() {
               <span className="app-eyebrow">ONE PLAN. MORE ROOM TO LEARN.</span>
               <h2>Nova Premium</h2>
             </div>
-            <span className="premium-plan-badge">MONTHLY</span>
+            <span className="premium-plan-badge">R50 / MONTH</span>
           </div>
-          {activeSubscription && (
+          {activeSubscription?.status === "active" && (
             <div className="premium-active-status" role="status">
               <div>
                 <ShieldCheck size={19} />
@@ -214,6 +243,26 @@ function UpgradePage() {
                 {cancelling ? "Cancelling…" : "Cancel renewal"}
               </button>
             </div>
+          )}
+          {activeSubscription?.status === "cancelled" && (
+            <div className="premium-active-status" role="status">
+              <div>
+                <ShieldCheck size={19} />
+                <span>
+                  <strong>Renewal cancelled</strong>
+                  <small>
+                    {activeSubscription.current_period_end && Date.parse(activeSubscription.current_period_end) > Date.now()
+                      ? `Premium stays active until ${new Date(activeSubscription.current_period_end).toLocaleDateString()}.`
+                      : "Premium access has ended."}
+                  </small>
+                </span>
+              </div>
+            </div>
+          )}
+          {activeSubscription?.status === "pending" && (
+            <p className="text-sm text-muted-foreground" role="status">
+              Your payment is being confirmed. Refresh this page in a few minutes; please don’t start another checkout while it is pending.
+            </p>
           )}
           <ul className="premium-perks space-y-3">
             {PERKS.map((perk) => (

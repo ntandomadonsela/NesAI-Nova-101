@@ -62,8 +62,10 @@ PAYPAL_ENV=sandbox                # "sandbox" while testing, "live" when ready
 PAYPAL_CLIENT_ID=...
 PAYPAL_CLIENT_SECRET=...
 PAYPAL_WEBHOOK_ID=...
+PAYPAL_PLAN_ID=...              # server-side verified R50 ZAR monthly plan
 VITE_PAYPAL_CLIENT_ID=...         # same value as PAYPAL_CLIENT_ID, exposed to the browser
 VITE_PAYPAL_PLAN_ID=...
+AI_GATEWAY_MODEL=gpt-4o-mini
 ```
 
 ### B. Deploying to Vercel
@@ -94,21 +96,25 @@ and `vite.config.ts` selects it when `VERCEL` is not set.
 ### C. PayPal setup (~15 minutes)
 
 1. Go to [developer.paypal.com](https://developer.paypal.com/dashboard/) and log in with
-   your PayPal business account (create one if you don't have it yet — it's free).
+   your PayPal business account.
 2. **Apps & Credentials** → create an app → copy the **Client ID** and **Secret** into
    `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`. Do this once in Sandbox to test, and again
    in Live when you're ready to accept real money.
-3. **Create a subscription plan**: under your account, create a Product
-   ("NesAI Nova Premium") and a Plan on it (monthly billing, your price). The dashboard
-   has a "Subscriptions" section for this, or it can be done via the
-   `/v1/billing/plans` API. Copy the resulting Plan ID into `VITE_PAYPAL_PLAN_ID`.
+3. **Create a subscription plan** for **ZAR 50.00 every month**, with no trial and no setup
+   fee. Create a Product ("NesAI Nova Premium") and an active recurring Plan in PayPal.
+   Put the same Plan ID in both `PAYPAL_PLAN_ID` (server-side) and
+   `VITE_PAYPAL_PLAN_ID` (public SDK setting). The server checks the live PayPal plan is
+   exactly ZAR 50 monthly before activating access. The checkout offers PayPal and requests
+   the card button; PayPal displays card checkout only when the merchant and payer are eligible.
 4. **Set up the webhook**: in the same app, add a webhook pointing to
    `https://yourdomain.com/api/payments/paypal-webhook`, subscribed at minimum to:
    `BILLING.SUBSCRIPTION.ACTIVATED`, `BILLING.SUBSCRIPTION.CANCELLED`,
    `BILLING.SUBSCRIPTION.EXPIRED`, `BILLING.SUBSCRIPTION.SUSPENDED`,
-   `PAYMENT.SALE.COMPLETED`, `PAYMENT.SALE.REFUNDED`. Copy the Webhook ID into
+   `BILLING.SUBSCRIPTION.PAYMENT.FAILED`, `PAYMENT.SALE.COMPLETED`,
+   `PAYMENT.SALE.REFUNDED`, `PAYMENT.SALE.REVERSED`. Copy the Webhook ID into
    `PAYPAL_WEBHOOK_ID`.
-5. Test end-to-end in Sandbox with a PayPal sandbox buyer account before switching
+5. Run the student entitlement and AI quota migration in the Supabase SQL Editor, then test
+   end-to-end in Sandbox with a PayPal sandbox buyer account before switching
    `PAYPAL_ENV` to `live` and swapping in your live credentials.
 
 Note on credit cards: PayPal's hosted checkout (the setup above) already lets a customer

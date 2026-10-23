@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed single studio concept</title><desc id="desc">Original warm toned architectural illustration of a compact student studio with a bed, study desk, kitchenette and high windows.</desc>
+  <defs><linearGradient id="wall" x2="0" y2="1"><stop stop-color="#f3f0e8"/><stop offset="1" stop-color="#ddd9d0"/></linearGradient><linearGradient id="floor" x2="0" y2="1"><stop stop-color="#c9b99c"/><stop offset="1" stop-color="#a59070"/></linearGradient></defs>
+  <path fill="#ede9df" d="M0 0h1000v700H0z"/><path fill="url(#wall)" d="M70 80 520 30v395L70 510z"/><path fill="#e6e1d8" d="m520 30 420 90v392l-420-87z"/><path fill="url(#floor)" d="M70 510 520 425l420 87-450 188z"/>
+  <path fill="#bad0d0" d="m126 119 164-20v195l-164 28z"/><path fill="#dce7e4" d="m302 97 154-19v199l-154 21z"/><path fill="none" stroke="#fff" stroke-width="13" d="M291 99v194m-165-96 330-42"/><path fill="none" stroke="#747d78" stroke-width="6" d="m115 110 351-43v240l-351 46z"/>
+  <path fill="#353936" d="M596 115h210v104H596z"/><path fill="#f7f4ed" d="M612 131h178v74H612z"/><path fill="#252b29" d="M646 221h177v16H646z"/><path fill="#b9a88c" d="M630 240h220v13H630z"/><path fill="#d4c7b1" d="M701 253h42v91h-42z"/>
+  <!-- built-in writing desk and slim study chair -->
+  <path fill="#876f51" d="M152 371h250v18H152z"/><path fill="#9d8668" d="M174 389h14v88h-14zm197 0h14v88h-14z"/><path fill="#e7e3dc" d="M245 396h98v59h-98z"/><path fill="#343937" d="M228 459h128v12H228zm12 12h10v48h-10zm102 0h10v48h-10z"/><path fill="#252a27" d="M276 330h98v65h-98z"/><path fill="#343b38" d="M291 344h69v38h-69z"/>
+  <!-- bed and integrated storage -->
+  <path fill="#eee9e0" d="m546 373 286 49v150l-285-53z"/><path fill="#d5c5ad" d="m546 425 285 48v99l-285-53z"/><path fill="#faf8f3" d="m569 372 246 43-50 79-252-44z"/><path fill="#c9c4ba" d="m560 364 205 34-1 23-205-36z"/><path fill="#b2a58f" d="m573 395 184 32-24 37-186-33z"/><path fill="#77644c" d="m546 568 286 54v18l-286-56z"/>
+  <!-- privacy module seams and black steel frame accents -->
+  <g fill="none" stroke="#292e2b" stroke-width="8" opacity=".88"><path d="M70 80 520 30l420 90M70 80v430l450-85 420 87V120M520 30v395"/><path d="m120 511 400-76 420 87"/></g>
+  <g fill="#252a27"><rect x="860" y="319" width="55" height="141"/><rect x="875" y="335" width="26" height="109" fill="#c8dedb"/></g>
+  <path fill="#c6a66f" d="m88 548 52-10v6l-52 10zm785 88 60 12v5l-60-12z"/>
+</svg>

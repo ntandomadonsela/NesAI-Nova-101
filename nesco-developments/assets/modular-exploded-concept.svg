@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" role="img" aria-labelledby="title desc">
+  <title id="title">Modular building assembly concept</title><desc id="desc">Original exploded axonometric concept showing a solar-ready roof, insulated wall panels, a light-gauge steel structural frame, floor cassette and base.</desc>
+  <defs><linearGradient id="panel" x2="1" y2="1"><stop stop-color="#e7e1d4"/><stop offset="1" stop-color="#b9ad99"/></linearGradient></defs>
+  <rect width="1100" height="700" fill="#f1f0eb"/>
+  <!-- solar-ready roof cassette -->
+  <g stroke="#252b28" stroke-width="6" stroke-linejoin="round"><path fill="#4c5651" d="m251 98 369-73 244 83-369 78z"/><path fill="#252e2d" d="m273 91 134-26 61 20-133 27zm173-34 135-26 61 20-135 26zm-18 69 133-27 60 21-133 26zm172-34 135-27 60 21-134 27z"/></g>
+  <g fill="none" stroke="#bd9e6a" stroke-width="3" stroke-dasharray="9 7"><path d="m326 192-1 62m350-133 2 63m-216 4v61"/></g>
+  <!-- insulated side cassettes lifted clear of frame -->
+  <g stroke="#292f2c" stroke-width="5" stroke-linejoin="round"><path fill="url(#panel)" d="m237 280 71-14v187l-71 15z"/><path fill="#d1c7b5" d="m314 264 71-14v187l-71 16z"/><path fill="#c2b6a1" d="m392 249 71-14v188l-71 14z"/><path fill="#e7e0d3" d="m720 246 116 38v186l-116-38z"/><path fill="#cec4b3" d="m852 289 82 27v185l-82-27z"/></g>
+  <g fill="none" stroke="#bd9e6a" stroke-width="3" stroke-dasharray="9 7"><path d="m270 473 4 69m77-86 2 69m78-85 1 69m345-39-1 67m132-28-1 68"/></g>
+  <!-- light-gauge steel frame, repeated bays -->
+  <g fill="none" stroke="#27312e" stroke-width="11" stroke-linejoin="round"><path d="m261 559 400-77 277 95-401 84z"/><path d="m261 559v-125m400 202V512m277 65V451m-401 85V412"/><path d="m261 434 399-77 278 94-400 76z"/><path d="m360 415v126m99-145v125m101-143v125m101-86v125m99-144v125m99-106v125"/><path d="m261 498 400-77 277 95"/></g>
+  <!-- floor / service chassis -->
+  <path fill="#776b59" stroke="#272d2a" stroke-width="7" d="m243 623 420-83 299 102-421 83z"/>
+  <path fill="#b8a98f" stroke="#272d2a" stroke-width="6" d="m278 616 384-75 244 84-385 77z"/>
+  <g fill="#303734"><path d="m318 680 26-5v15l-26 5zm116-22 26-5v15l-26 5zm116-23 26-5v15l-26 5zm117-23 26-5v15l-26 5zm116-23 26-5v15l-26 5z"/></g>
+  <!-- technical annotations -->
+  <g fill="none" stroke="#997c4f" stroke-width="2"><path d="M814 82h176v48H872m-52 226h170v46H827m33 154h183v45H892"/></g>
+  <g fill="#333934" font-family="Arial,sans-serif" font-size="16" letter-spacing="2"><text x="820" y="68">SOLAR-READY ROOF</text><text x="824" y="337">INSULATED PANEL CASSETTES</text><text x="864" y="500">STEEL FRAME & FLOOR MODULE</text></g>
+  <text x="64" y="664" fill="#686960" font-family="Arial,sans-serif" font-size="12" letter-spacing="2">CONCEPT ASSEMBLY · ENGINEERING, MATERIALS & CONNECTIONS SUBJECT TO FINAL DESIGN</text>
+</svg>

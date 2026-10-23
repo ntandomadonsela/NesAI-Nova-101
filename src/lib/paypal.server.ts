@@ -57,8 +57,62 @@ export async function getSubscription(subscriptionId: string) {
     id: string;
     status: string;
     plan_id: string;
-    billing_info?: { next_billing_time?: string };
+    plan_overridden?: boolean;
+    create_time?: string;
+    billing_info?: {
+      next_billing_time?: string;
+      last_payment?: { amount?: { currency_code?: string; value?: string }; time?: string };
+      failed_payments_count?: number;
+    };
   }>;
+}
+
+export async function getPlan(planId: string) {
+  const res = await paypalFetch(`/v1/billing/plans/${encodeURIComponent(planId)}`);
+  if (!res.ok) throw new Error(`PayPal getPlan failed: ${res.status}`);
+  return res.json() as Promise<{
+    id: string;
+    status: string;
+    billing_cycles?: Array<{
+      tenure_type: string;
+      total_cycles: number;
+      frequency: { interval_unit: string; interval_count: number };
+      pricing_scheme?: { fixed_price?: { currency_code?: string; value?: string } };
+    }>;
+    payment_preferences?: { setup_fee?: { currency_code?: string; value?: string } };
+  }>;
+}
+
+/** Enforce the advertised R50 monthly price against PayPal's server-side plan. */
+export function isR50MonthlyPlan(plan: Awaited<ReturnType<typeof getPlan>>) {
+  if (plan.status !== "ACTIVE" || plan.billing_cycles?.length !== 1) return false;
+  const [cycle] = plan.billing_cycles;
+  const price = cycle.pricing_scheme?.fixed_price;
+  const setupFee = plan.payment_preferences?.setup_fee;
+  return (
+    cycle.tenure_type === "REGULAR" &&
+    cycle.total_cycles === 0 &&
+    cycle.frequency.interval_unit === "MONTH" &&
+    cycle.frequency.interval_count === 1 &&
+    price?.currency_code === "ZAR" &&
+    Number(price.value) === 50 &&
+    (!setupFee || Number(setupFee.value) === 0)
+  );
+}
+
+export function hasPaidR50MonthlyCycle(subscription: Awaited<ReturnType<typeof getSubscription>>) {
+  const payment = subscription.billing_info?.last_payment;
+  const paymentTime = payment?.time ? Date.parse(payment.time) : Number.NaN;
+  const createdTime = subscription.create_time ? Date.parse(subscription.create_time) : Number.NaN;
+  return (
+    subscription.status === "ACTIVE" &&
+    subscription.plan_overridden !== true &&
+    payment?.amount?.currency_code === "ZAR" &&
+    Number(payment.amount.value) === 50 &&
+    Number.isFinite(paymentTime) &&
+    (!Number.isFinite(createdTime) || paymentTime >= createdTime) &&
+    (subscription.billing_info?.failed_payments_count ?? 0) === 0
+  );
 }
 
 /**

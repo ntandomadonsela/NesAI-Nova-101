@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { getSubscription } from "@/lib/paypal.server";
+import { getPlan, getSubscription, hasPaidR50MonthlyCycle, isR50MonthlyPlan } from "@/lib/paypal.server";
 
 export const Route = createFileRoute("/api/payments/paypal-subscribe")({
   server: {
@@ -33,49 +33,87 @@ export const Route = createFileRoute("/api/payments/paypal-subscribe")({
         } catch {
           return new Response("Bad request", { status: 400 });
         }
-        if (!body.subscriptionId) return new Response("Bad request", { status: 400 });
+        if (!body.subscriptionId || body.subscriptionId.length > 64) return new Response("Bad request", { status: 400 });
+
+        const configuredPlan = process.env.PAYPAL_PLAN_ID?.trim() || process.env.VITE_PAYPAL_PLAN_ID?.trim();
+        if (!configuredPlan) {
+          console.error("Missing PAYPAL_PLAN_ID for Premium activation");
+          return new Response("Premium checkout is not configured", { status: 503 });
+        }
 
         let details;
+        let plan;
         try {
           details = await getSubscription(body.subscriptionId);
+          plan = await getPlan(configuredPlan);
         } catch (err) {
           console.error("PayPal verify failed", err);
           return new Response("Could not verify subscription with PayPal", { status: 502 });
         }
 
-        if (details.id !== body.subscriptionId) {
-          return new Response("Subscription verification failed", { status: 402 });
-        }
-        const configuredPlan = process.env.VITE_PAYPAL_PLAN_ID;
-        if (configuredPlan && details.plan_id !== configuredPlan) {
+        if (
+          details.id !== body.subscriptionId ||
+          details.plan_id !== configuredPlan ||
+          plan.id !== configuredPlan ||
+          !isR50MonthlyPlan(plan) ||
+          details.plan_overridden === true
+        ) {
           return new Response("Subscription plan does not match this product", { status: 402 });
-        }
-        const isActive = details.status === "ACTIVE" || details.status === "APPROVED";
-        if (!isActive) {
-          return new Response(JSON.stringify({ error: `Subscription status: ${details.status}` }), {
-            status: 402,
-            headers: { "Content-Type": "application/json" },
-          });
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { error: subscriptionError } = await supabaseAdmin.from("subscriptions").upsert(
-          {
+        const { data: existing, error: lookupError } = await supabaseAdmin
+          .from("subscriptions")
+          .select("id,user_id")
+          .eq("paypal_subscription_id", details.id)
+          .maybeSingle();
+        if (lookupError) {
+          console.error("Could not check Premium subscription ownership", lookupError);
+          return new Response("Could not verify the Premium account", { status: 500 });
+        }
+        if (existing && existing.user_id !== userData.user.id) {
+          return new Response("This PayPal subscription is already linked to another account", { status: 409 });
+        }
+        if (!existing) {
+          const { error: insertError } = await supabaseAdmin.from("subscriptions").insert({
             user_id: userData.user.id,
             provider: "paypal",
             paypal_subscription_id: details.id,
             paypal_plan_id: details.plan_id,
+            status: "pending",
+            current_period_end: details.billing_info?.next_billing_time ?? null,
+            updated_at: new Date().toISOString(),
+          });
+          if (insertError) {
+            // A concurrent callback may have inserted the same id. Never use an
+            // upsert that could transfer another user's PayPal subscription.
+            const { data: raced, error: raceLookupError } = await supabaseAdmin
+              .from("subscriptions")
+              .select("id,user_id")
+              .eq("paypal_subscription_id", details.id)
+              .maybeSingle();
+            if (raceLookupError || raced?.user_id !== userData.user.id) {
+              return new Response("This PayPal subscription could not be linked safely", { status: 409 });
+            }
+          }
+        }
+
+        if (!hasPaidR50MonthlyCycle(details)) {
+          return Response.json({ ok: true, pending: true, subscriptionId: details.id }, { status: 202 });
+        }
+
+        const { error: subscriptionError } = await supabaseAdmin
+          .from("subscriptions")
+          .update({
             status: "active",
             current_period_end: details.billing_info?.next_billing_time ?? null,
             updated_at: new Date().toISOString(),
-          },
-          { onConflict: "paypal_subscription_id" },
-        );
+          })
+          .eq("paypal_subscription_id", details.id)
+          .eq("user_id", userData.user.id);
         if (subscriptionError) {
-          console.error("Could not save PayPal subscription", subscriptionError);
-          return new Response("Could not activate Premium. Please contact support.", {
-            status: 500,
-          });
+          console.error("Could not activate verified PayPal subscription", subscriptionError);
+          return new Response("Could not activate Premium. Please contact support.", { status: 500 });
         }
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
@@ -88,10 +126,7 @@ export const Route = createFileRoute("/api/payments/paypal-subscribe")({
           });
         }
 
-        return new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        return Response.json({ ok: true, pending: false });
       },
     },
   },

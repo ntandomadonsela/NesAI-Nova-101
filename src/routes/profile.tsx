@@ -13,11 +13,12 @@ import { appUrl } from "@/lib/app-url";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Manage profile — NesAI" },
+      { title: "Manage your NesAI profile" },
       {
         name: "description",
         content: "Manage your NesAI student account, study level and password.",
       },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: ProfilePage,

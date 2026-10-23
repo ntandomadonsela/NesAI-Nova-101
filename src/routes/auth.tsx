@@ -23,8 +23,9 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — NesAI" },
+      { title: "Sign in to NesAI" },
       { name: "description", content: "Sign in or create your free NesAI account." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   validateSearch: (s) => searchSchema.parse(s),
