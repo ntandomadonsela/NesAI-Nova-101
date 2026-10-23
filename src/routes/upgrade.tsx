@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteNav } from "@/components/site-nav";
 import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/upgrade")({
   head: () => ({
@@ -97,11 +98,11 @@ function UpgradePage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ subscriptionId: activeSubscription.id }),
       });
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) throw new Error("subscription_request_failed");
       setActiveSubscription((current) => current ? { ...current, status: "cancelled" } : current);
       toast.success("Renewal cancelled. Premium stays available until the paid period ends.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not cancel your subscription.");
+      toast.error(userFacingError(error, "We couldn’t cancel your subscription. Please try again or contact support."));
     } finally {
       setCancelling(false);
     }
@@ -151,7 +152,7 @@ function UpgradePage() {
                 },
                 body: JSON.stringify({ subscriptionId: data.subscriptionID }),
               });
-              if (!res.ok) throw new Error(await res.text());
+              if (!res.ok) throw new Error("subscription_activation_failed");
               const activation = (await res.json()) as { pending?: boolean };
               if (activation.pending) {
                 toast.info("Payment is being confirmed. We’ll unlock Premium as soon as PayPal confirms it.");

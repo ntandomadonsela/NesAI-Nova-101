@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
@@ -31,7 +32,7 @@ export function SiteNav() {
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error(error.message);
+      toast.error(userFacingError(error, "We couldn’t sign you out. Please try again."));
       return;
     }
     setOpen(false);

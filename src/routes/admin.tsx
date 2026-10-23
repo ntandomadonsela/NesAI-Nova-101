@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { userFacingError } from "@/lib/user-facing-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -205,7 +206,7 @@ function AdminDashboard() {
         });
         if (!ingestResponse.ok) {
           const body = await ingestResponse.json().catch(() => ({}));
-          toast.warning(body?.error ?? "The document is uploaded, but AI indexing did not finish.");
+          toast.warning("The document was uploaded, but AI indexing did not finish. Please try again later.");
         } else {
           toast.success("Document uploaded and indexed for the AI tutor.");
         }
@@ -222,7 +223,7 @@ function AdminDashboard() {
       await queryClient.invalidateQueries({ queryKey: ["resources"] });
     } catch (error) {
       console.error("Admin upload failed", error);
-      toast.error(error instanceof Error ? error.message : "Upload failed. Please try again.");
+      toast.error(userFacingError(error, "The upload couldn’t be completed. Please check the file and try again."));
     } finally {
       setBusy(false);
     }
@@ -242,7 +243,7 @@ function AdminDashboard() {
       await queryClient.invalidateQueries({ queryKey: ["admin-console"] });
       await queryClient.invalidateQueries({ queryKey: ["resources"] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete the document.");
+      toast.error(userFacingError(error, "The document couldn’t be deleted. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -318,9 +319,7 @@ function AdminDashboard() {
           <div className="paper-card mt-8 p-8">
             <h2 className="font-serif text-2xl">Admin data could not load</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {consoleQuery.error instanceof Error
-                ? consoleQuery.error.message
-                : "Check the admin server setup and try again."}
+              We couldn’t load the admin data. Please try again or contact support.
             </p>
             <Button className="mt-5" onClick={() => void consoleQuery.refetch()}>
               Try again

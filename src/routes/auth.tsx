@@ -14,6 +14,7 @@ import {
   UNIVERSITY_SUBJECTS,
 } from "@/lib/study-catalog";
 import { appUrl } from "@/lib/app-url";
+import { userFacingError } from "@/lib/user-facing-error";
 
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup", "forgot", "recovery"]).optional(),
@@ -134,12 +135,10 @@ function AuthPage() {
       }
       navigate({ to: (redirect as any) ?? "/chat" });
     } catch (err: any) {
-      const message = err?.message ?? "Something went wrong";
-      toast.error(
-        message === "Failed to fetch"
-          ? "We couldn’t reach your account service. Please try again in a moment."
-          : message,
-      );
+      const message = err?.message ?? "";
+      toast.error(message === "Failed to fetch"
+        ? "We couldn’t reach your account service. Please try again in a moment."
+        : userFacingError(err, "We couldn’t complete sign-in. Check your details and try again."));
     } finally {
       setLoading(false);
     }
@@ -159,9 +158,7 @@ function AuthPage() {
       if (error) throw error;
       toast.success("We requested another confirmation email. Check your junk folder too.");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "We couldn’t resend the confirmation email.",
-      );
+      toast.error(userFacingError(error, "We couldn’t resend the confirmation email. Please try again."));
     } finally {
       setResendingConfirmation(false);
     }

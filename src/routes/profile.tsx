@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEGREE_SUGGESTIONS, LEVELS, subjectsForLevel } from "@/lib/study-catalog";
 import { appUrl } from "@/lib/app-url";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -110,7 +111,7 @@ function ProfilePage() {
       window.dispatchEvent(new Event("nesai:study-profile-updated"));
       toast.success("Your study profile has been updated.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "We couldn’t save your profile.");
+      toast.error(userFacingError(error, "We couldn’t save your profile. Please try again."));
     } finally {
       setSavingProfile(false);
     }
@@ -132,7 +133,7 @@ function ProfilePage() {
       if (error) throw error;
       toast.success("Check your inboxes to confirm the email change.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "We couldn’t update your email.");
+      toast.error(userFacingError(error, "We couldn’t update your email. Please try again."));
     } finally {
       setSavingEmail(false);
     }
@@ -160,7 +161,7 @@ function ProfilePage() {
       setConfirmPassword("");
       toast.success("Your password has been changed.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "We couldn’t change your password.");
+      toast.error(userFacingError(error, "We couldn’t change your password. Please try again."));
     } finally {
       setSavingPassword(false);
     }

@@ -6,6 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import { userFacingError } from "@/lib/user-facing-error";
 import { createStudentAgents, getAgent, type SubjectAgent } from "@/lib/subject-agents";
 import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
@@ -138,7 +139,7 @@ function ChatPage() {
     } catch (error) {
       setStudentAgents([]);
       setAgent(getAgent("general"));
-      setProfileError(error instanceof Error ? error.message : "We couldn’t load your subjects.");
+      setProfileError(userFacingError(error, "We couldn’t load your subjects. Please refresh and try again."));
     } finally {
       setReady(true);
       setProfileLoading(false);
@@ -225,22 +226,18 @@ function ChatPage() {
         if (body?.reason === "daily_limit") {
           setShowLimit(true);
         } else {
-          toast.error(body?.error ?? "The AI provider is busy. Try again shortly.");
+          toast.error("The AI tutor is busy right now. Please try again shortly.");
         }
         return;
       }
       if (res.status === 402) {
         const body = await res.json().catch(() => ({}));
-        toast.error(body?.error ?? "AI credits are exhausted. Please contact support.");
+        toast.error("AI tutoring is temporarily unavailable. Please try again later or contact support.");
         setStreaming(false);
         return;
       }
       if (!res.ok || !res.body) {
-        const contentType = res.headers.get("content-type") ?? "";
-        const details = contentType.includes("application/json")
-          ? ((await res.json().catch(() => ({}))) as { error?: string }).error
-          : (await res.text()).trim();
-        throw new Error(details || `The tutor request failed (${res.status}).`);
+        throw new Error("tutor_request_failed");
       }
 
       const reader = res.body.getReader();
@@ -269,7 +266,7 @@ function ChatPage() {
       }
       setMessages([...nextMessages, { role: "assistant", content: assistant }]);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const message = userFacingError(err, "The AI tutor couldn’t answer just now. Please try again.");
       toast.error(message);
       setInput(text);
       setMessages([
