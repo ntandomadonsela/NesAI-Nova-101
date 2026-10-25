@@ -159,9 +159,12 @@ jobs:
       - name: Publish preview release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PREVIEW_TAG: mobile-preview-${{ github.run_number }}
+          PREVIEW_TARGET: ${{ github.sha }}
         run: >-
           gh release create "$PREVIEW_TAG" mobile-release/app-debug.apk
+          --target "$PREVIEW_TARGET"
           --title "NesAI Student Android Preview"
           --notes "Installable debug preview for device testing. This is not a Play Store release."
           --prerelease
