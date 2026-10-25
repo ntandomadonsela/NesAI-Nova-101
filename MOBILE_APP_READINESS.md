@@ -42,14 +42,14 @@ Add mobile-specific value as part of the product, not just the package: saved Va
 
 ## Build validation workflow
 
-`.github/workflows/mobile-build.yml` builds an installable Android debug APK and an iOS Simulator app on GitHub Actions for pull requests or manual runs. Configure the repository Actions variables `VITE_SUPABASE_URL` and either `VITE_SUPABASE_PUBLISHABLE_KEY` or `VITE_SUPABASE_ANON_KEY` first. `NESAI_API_BASE_URL` is optional and defaults to `https://www.nesai.co.za`. The workflow does not sign Android App Bundles or iOS archives for store distribution.
+`.github/workflows/mobile-build.yml` builds an installable Android debug APK and an iOS Simulator app on GitHub Actions for the release branch, pull requests, or manual runs. Repository Actions variables/secrets override the app's public Supabase URL and publishable key defaults. `NESAI_API_BASE_URL` is optional and defaults to `https://www.nesai.co.za`. The workflow does not sign Android App Bundles or iOS archives for store distribution.
 
 ## Decisions / access still needed
 
 - Confirm the permanent app identifier (bundle ID / Android application ID) before generating store projects.
 - Legal publisher name and the Apple Developer / Google Play Console accounts that will own the listings.
 - Access to a Mac with Xcode for iOS simulator/device builds and signing; Android Studio/SDK for Android builds.
-- Configure the GitHub Actions public app variables above to run the native build-validation workflow.
+- Configure GitHub Actions signing credentials and store products to move from the unsigned validation artifacts to store release builds.
 - Add `nesai://app/**` to the Supabase Auth redirect URL allowlist and configure the documented store product IDs and verifier secrets.
 - Register `https://www.nesai.co.za/api/payments/apple-notifications` as the App Store Server Notifications V2 URL. Configure Google Play RTDN to publish to Cloud Pub/Sub with an OIDC-authenticated push subscription targeting `https://www.nesai.co.za/api/payments/google-notifications`; set the matching audience and service account email in server secrets.
 - Configure `VITE_IOS_PREMIUM_PRODUCT_ID`, `VITE_ANDROID_PREMIUM_PRODUCT_ID`, `VITE_ANDROID_PREMIUM_BASE_PLAN_ID` for the client and matching `IOS_PREMIUM_PRODUCT_ID`, `ANDROID_PREMIUM_PRODUCT_ID`, `ANDROID_PREMIUM_BASE_PLAN_ID`, `ANDROID_PACKAGE_NAME`, and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` server secrets. Apple verification needs `IOS_BUNDLE_ID`, numeric `APPLE_APP_ID`, and Apple root certificates in `APPLE_ROOT_CERTIFICATES_BASE64` (comma-separated base64 DER certificates). These products and credentials must be created in the store consoles first.
