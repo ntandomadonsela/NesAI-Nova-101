@@ -6,6 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import { apiUrl } from "@/lib/api-url";
 import { userFacingError } from "@/lib/user-facing-error";
 import { createStudentAgents, getAgent, type SubjectAgent } from "@/lib/subject-agents";
 import { SiteNav } from "@/components/site-nav";
@@ -196,7 +197,7 @@ function ChatPage() {
         return;
       }
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

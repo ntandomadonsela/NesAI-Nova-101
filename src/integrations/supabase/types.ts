@@ -141,6 +141,10 @@ export type Database = {
           provider: string;
           paypal_subscription_id: string | null;
           paypal_plan_id: string | null;
+          store_product_id: string | null;
+          store_transaction_id: string | null;
+          store_purchase_token: string | null;
+          store_last_notification_at: string | null;
           status: string;
           current_period_end: string | null;
           created_at: string;
@@ -152,6 +156,10 @@ export type Database = {
           provider?: string;
           paypal_subscription_id?: string | null;
           paypal_plan_id?: string | null;
+          store_product_id?: string | null;
+          store_transaction_id?: string | null;
+          store_purchase_token?: string | null;
+          store_last_notification_at?: string | null;
           status?: string;
           current_period_end?: string | null;
           created_at?: string;
@@ -163,6 +171,10 @@ export type Database = {
           provider?: string;
           paypal_subscription_id?: string | null;
           paypal_plan_id?: string | null;
+          store_product_id?: string | null;
+          store_transaction_id?: string | null;
+          store_purchase_token?: string | null;
+          store_last_notification_at?: string | null;
           status?: string;
           current_period_end?: string | null;
           created_at?: string;

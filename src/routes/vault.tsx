@@ -6,7 +6,25 @@ import { SiteNav } from "@/components/site-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Download, Sparkles, FileText, Search, X } from "lucide-react";
+import {
+  BookmarkCheck,
+  BookmarkPlus,
+  Download,
+  FileText,
+  Search,
+  Share2,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { shareStudyResource } from "@/lib/share-study-resource";
+import {
+  listOfflineResources,
+  removeOfflineResource,
+  saveOfflineResource,
+  type OfflineResource,
+} from "@/lib/offline-vault";
 
 export const Route = createFileRoute("/vault")({
   head: () => ({
@@ -51,6 +69,33 @@ function Vault() {
   const [docType, setDocType] = useState<string>("all");
   const [year, setYear] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [offlineResources, setOfflineResources] = useState<OfflineResource[]>([]);
+  const [showOfflineOnly, setShowOfflineOnly] = useState(false);
+  const [savingOfflineId, setSavingOfflineId] = useState<string | null>(null);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [offlinePreview, setOfflinePreview] = useState<{ title: string; url: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listOfflineResources().then(
+      (saved) => {
+        if (!cancelled) setOfflineResources(saved);
+      },
+      () => {
+        if (!cancelled) toast.error("Offline study storage is unavailable on this device.");
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (offlinePreview) URL.revokeObjectURL(offlinePreview.url);
+    },
+    [offlinePreview],
+  );
 
   const {
     data: resources = [],
@@ -134,6 +179,55 @@ function Vault() {
     setSearch("");
   }
 
+  async function saveForOffline(resource: Resource) {
+    if (savingOfflineId) return;
+    setSavingOfflineId(resource.id);
+    try {
+      const response = await fetch(resource.file_url);
+      if (!response.ok) throw new Error("The study file could not be downloaded.");
+      const file = await response.blob();
+      if (!file.size || file.size > 50 * 1024 * 1024) {
+        throw new Error("This file is empty or too large to save offline (50 MB maximum).");
+      }
+      const pdfHeader = new TextDecoder().decode(await file.slice(0, 5).arrayBuffer());
+      if (pdfHeader !== "%PDF-") throw new Error("This resource is not a downloadable PDF.");
+      await saveOfflineResource(resource, file);
+      setOfflineResources(await listOfflineResources());
+      toast.success("Saved to this device for offline study.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not save this study file offline.",
+      );
+    } finally {
+      setSavingOfflineId(null);
+    }
+  }
+
+  async function deleteOffline(id: string) {
+    try {
+      await removeOfflineResource(id);
+      setOfflineResources(await listOfflineResources());
+      toast.success("Removed from offline storage.");
+    } catch {
+      toast.error("Could not remove the saved study file.");
+    }
+  }
+
+  async function shareResource(resource: Resource | OfflineResource) {
+    setSharingResourceId(resource.id);
+    try {
+      await shareStudyResource(resource);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not share this study file.");
+    } finally {
+      setSharingResourceId(null);
+    }
+  }
+
+  function readOffline(resource: OfflineResource) {
+    setOfflinePreview({ title: resource.title, url: URL.createObjectURL(resource.file) });
+  }
+
   function askAiAbout(r: Resource) {
     navigate({
       to: "/chat",
@@ -142,7 +236,7 @@ function Vault() {
         title: r.title,
         subject: r.subject_or_module,
         year: String(r.year),
-      } as any,
+      },
     });
   }
 
@@ -202,7 +296,7 @@ function Vault() {
 
         {/* Main */}
         <main>
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-6 flex flex-wrap items-center gap-3">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -215,9 +309,62 @@ function Vault() {
             <div className="text-sm text-muted-foreground">
               {filtered.length} result{filtered.length === 1 ? "" : "s"}
             </div>
+            <Button
+              variant={showOfflineOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowOfflineOnly((value) => !value)}
+            >
+              <BookmarkCheck className="mr-1.5 h-4 w-4" /> Saved offline ({offlineResources.length})
+            </Button>
           </div>
 
-          {isLoading ? (
+          {showOfflineOnly ? (
+            offlineResources.length === 0 ? (
+              <div className="paper-card p-12 text-center text-muted-foreground">
+                No files are saved on this device yet. Save a paper or set of notes while online to
+                study without a connection.
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {offlineResources
+                  .filter(
+                    (resource) =>
+                      !search || resource.title.toLowerCase().includes(search.toLowerCase()),
+                  )
+                  .map((resource) => (
+                    <article key={resource.id} className="paper-card flex flex-col p-6">
+                      <h3 className="font-serif text-lg">{resource.title}</h3>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {resource.subject_or_module} · {resource.year} · Saved{" "}
+                        {new Date(resource.saved_at).toLocaleDateString()}
+                      </p>
+                      <div className="mt-5 flex gap-2">
+                        <Button size="sm" className="flex-1" onClick={() => readOffline(resource)}>
+                          <FileText className="mr-1.5 h-4 w-4" /> Read offline
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={sharingResourceId === resource.id}
+                          onClick={() => void shareResource(resource)}
+                          aria-label={`Share ${resource.title}`}
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={`Remove ${resource.title} from offline storage`}
+                          onClick={() => void deleteOffline(resource.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </article>
+                  ))}
+              </div>
+            )
+          ) : isLoading ? (
             <div className="grid gap-4 md:grid-cols-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="paper-card h-48 animate-pulse" />
@@ -264,11 +411,42 @@ function Vault() {
                       </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                    <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                       <Button variant="outline" size="sm" asChild className="flex-1">
                         <a href={r.file_url} target="_blank" rel="noreferrer">
                           <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
                         </a>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={sharingResourceId === r.id}
+                        onClick={() => void shareResource(r)}
+                        className="flex-1"
+                      >
+                        <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                        {sharingResourceId === r.id ? "Preparing…" : "Share PDF"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          savingOfflineId === r.id ||
+                          offlineResources.some((saved) => saved.id === r.id)
+                        }
+                        onClick={() => void saveForOffline(r)}
+                        className="flex-1"
+                      >
+                        {offlineResources.some((saved) => saved.id === r.id) ? (
+                          <>
+                            <BookmarkCheck className="mr-1.5 h-3.5 w-3.5" /> Saved offline
+                          </>
+                        ) : (
+                          <>
+                            <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />{" "}
+                            {savingOfflineId === r.id ? "Saving…" : "Save offline"}
+                          </>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -285,6 +463,21 @@ function Vault() {
           )}
         </main>
       </div>
+      {offlinePreview && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-background">
+          <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+            <h2 className="truncate font-medium">{offlinePreview.title}</h2>
+            <Button variant="outline" size="sm" onClick={() => setOfflinePreview(null)}>
+              <X className="mr-1.5 h-4 w-4" /> Close
+            </Button>
+          </div>
+          <iframe
+            title={offlinePreview.title}
+            src={offlinePreview.url}
+            className="min-h-0 flex-1 bg-white"
+          />
+        </div>
+      )}
     </div>
   );
 }

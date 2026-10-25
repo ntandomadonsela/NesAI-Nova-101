@@ -2,12 +2,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  useNavigate,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useMemo, type ReactNode } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/error-reporting";
@@ -136,6 +141,78 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      if (import.meta.env.VITE_MOBILE_APP === "true" && window.location.pathname === "/") {
+        void navigate({ to: "/chat", replace: true });
+      }
+      return;
+    }
+
+    let disposed = false;
+    let listener: { remove: () => Promise<void> } | undefined;
+    let notificationListener: { remove: () => Promise<void> } | undefined;
+    const handledUrls = new Set<string>();
+    const handleUrl = async (rawUrl: string) => {
+      if (handledUrls.has(rawUrl)) return;
+      handledUrls.add(rawUrl);
+      try {
+        const callback = new URL(rawUrl);
+        if (callback.protocol !== "nesai:" || callback.hostname !== "app") return;
+        const fragment = new URLSearchParams(callback.hash.replace(/^#/, ""));
+        const code = callback.searchParams.get("code");
+        const accessToken = fragment.get("access_token");
+        const refreshToken = fragment.get("refresh_token");
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+        } else if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) throw error;
+        } else if (callback.searchParams.has("error")) {
+          throw new Error(
+            callback.searchParams.get("error_description") || "Link is invalid or has expired.",
+          );
+        }
+        if (callback.pathname === "/auth" && callback.searchParams.get("mode") === "recovery") {
+          await navigate({ to: "/auth", search: { mode: "recovery", redirect: "/chat" } });
+        } else if (callback.pathname === "/profile") {
+          await navigate({ to: "/profile" });
+        } else {
+          await navigate({ to: "/chat" });
+        }
+      } catch (error) {
+        console.error("Native auth callback failed", error);
+        await navigate({ to: "/auth", search: { mode: "signin", redirect: "/chat" } });
+      }
+    };
+
+    void App.addListener("appUrlOpen", ({ url }) => void handleUrl(url)).then((handle) => {
+      if (disposed) void handle.remove();
+      else listener = handle;
+    });
+    void LocalNotifications.addListener("localNotificationActionPerformed", ({ notification }) => {
+      if (notification.extra?.path === "/chat") void navigate({ to: "/chat" });
+    }).then((handle) => {
+      if (disposed) void handle.remove();
+      else notificationListener = handle;
+    });
+    void App.getLaunchUrl()
+      .then((launch) => {
+        if (launch?.url) void handleUrl(launch.url);
+      })
+      .catch((error) => console.error("Could not read the native launch URL", error));
+    return () => {
+      disposed = true;
+      void listener?.remove();
+      void notificationListener?.remove();
+    };
+  }, [navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>

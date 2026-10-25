@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ArrowRight, Check, CircleUserRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEGREE_SUGGESTIONS, LEVELS, subjectsForLevel } from "@/lib/study-catalog";
 import { appUrl } from "@/lib/app-url";
+import { apiUrl } from "@/lib/api-url";
 import { userFacingError } from "@/lib/user-facing-error";
+import { cancelDailyStudyReminder, scheduleDailyStudyReminder } from "@/lib/study-reminders";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -46,6 +49,19 @@ function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [acknowledgeBilling, setAcknowledgeBilling] = useState(false);
+  const [nativeReady, setNativeReady] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState("18:00");
+  const [savingReminder, setSavingReminder] = useState(false);
+
+  useEffect(() => {
+    setNativeReady(Capacitor.isNativePlatform());
+    setReminderEnabled(localStorage.getItem("nesai-study-reminder-enabled") === "true");
+    setReminderTime(localStorage.getItem("nesai-study-reminder-time") || "18:00");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,6 +180,33 @@ function ProfilePage() {
       toast.error(userFacingError(error, "We couldn’t change your password. Please try again."));
     } finally {
       setSavingPassword(false);
+    }
+  }
+
+  async function deleteAccount(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!userId || deleteConfirmation !== "DELETE" || !acknowledgeBilling || deletingAccount)
+      return;
+    setDeletingAccount(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Your session has expired. Sign in again.");
+      const response = await fetch(apiUrl("/api/account/delete"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ confirmation: "DELETE" }),
+      });
+      if (!response.ok) {
+        const result = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(result.error || "Account deletion failed.");
+      }
+      await supabase.auth.signOut({ scope: "local" });
+      toast.success("Your NesAI account has been deleted.");
+      await navigate({ to: "/auth", search: { mode: "signin", redirect: "/chat" }, replace: true });
+    } catch (error) {
+      toast.error(userFacingError(error, "We couldn’t delete your account. Please try again."));
+      setDeletingAccount(false);
     }
   }
 
@@ -338,6 +381,147 @@ function ProfilePage() {
               </div>
               <Button type="submit" disabled={savingProfile} className="profile-submit">
                 {savingProfile ? "Saving…" : "Save study profile"}
+              </Button>
+            </form>
+          </section>
+
+          {nativeReady && (
+            <section className="profile-card">
+              <div className="profile-card-heading">
+                <span className="profile-icon">
+                  <CircleUserRound size={20} />
+                </span>
+                <div>
+                  <span className="app-eyebrow">STUDY ROUTINE</span>
+                  <h2>Daily study reminder</h2>
+                </div>
+              </div>
+              <p className="profile-card-copy">
+                Set a private reminder on this device. NesAI does not send it to a server.
+              </p>
+              <div className="profile-form">
+                <div>
+                  <Label htmlFor="study-reminder-time">Reminder time</Label>
+                  <Input
+                    id="study-reminder-time"
+                    type="time"
+                    value={reminderTime}
+                    onChange={(event) => setReminderTime(event.target.value)}
+                    disabled={savingReminder}
+                  />
+                </div>
+                {reminderEnabled ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={savingReminder}
+                      onClick={async () => {
+                        setSavingReminder(true);
+                        try {
+                          await scheduleDailyStudyReminder(reminderTime);
+                          localStorage.setItem("nesai-study-reminder-time", reminderTime);
+                          toast.success("Your daily reminder has been updated.");
+                        } catch (error) {
+                          toast.error(userFacingError(error, "Could not update the reminder."));
+                        } finally {
+                          setSavingReminder(false);
+                        }
+                      }}
+                    >
+                      {savingReminder ? "Saving…" : "Update reminder"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={savingReminder}
+                      onClick={async () => {
+                        setSavingReminder(true);
+                        try {
+                          await cancelDailyStudyReminder();
+                          localStorage.removeItem("nesai-study-reminder-enabled");
+                          setReminderEnabled(false);
+                          toast.success("Your study reminder is off.");
+                        } catch (error) {
+                          toast.error(userFacingError(error, "Could not turn off the reminder."));
+                        } finally {
+                          setSavingReminder(false);
+                        }
+                      }}
+                    >
+                      Turn off
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={savingReminder}
+                    onClick={async () => {
+                      setSavingReminder(true);
+                      try {
+                        await scheduleDailyStudyReminder(reminderTime);
+                        localStorage.setItem("nesai-study-reminder-enabled", "true");
+                        localStorage.setItem("nesai-study-reminder-time", reminderTime);
+                        setReminderEnabled(true);
+                        toast.success("Your daily study reminder is set.");
+                      } catch (error) {
+                        toast.error(userFacingError(error, "Could not set a study reminder."));
+                      } finally {
+                        setSavingReminder(false);
+                      }
+                    }}
+                  >
+                    {savingReminder ? "Setting reminder…" : "Set daily reminder"}
+                  </Button>
+                )}
+              </div>
+            </section>
+          )}
+
+          <section className="profile-card border-destructive/40">
+            <div className="profile-card-heading">
+              <span className="profile-icon">
+                <ShieldCheck size={20} />
+              </span>
+              <div>
+                <span className="app-eyebrow">PERMANENT ACTION</span>
+                <h2>Delete account</h2>
+              </div>
+            </div>
+            <p className="profile-card-copy">
+              This immediately deletes your account, study profile, chats, and NesAI subscription
+              records. It does not cancel billing. Cancel any Apple, Google Play, or PayPal
+              subscription separately first.
+              <a className="ml-1 underline" href="/account-deletion">
+                Read the deletion details
+              </a>
+              .
+            </p>
+            <form className="profile-form" onSubmit={deleteAccount}>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acknowledgeBilling}
+                  onChange={(event) => setAcknowledgeBilling(event.target.checked)}
+                />
+                I understand that deleting my NesAI account does not stop external subscription
+                billing.
+              </label>
+              <div>
+                <Label htmlFor="delete-account-confirm">Type DELETE to confirm</Label>
+                <Input
+                  id="delete-account-confirm"
+                  value={deleteConfirmation}
+                  onChange={(event) => setDeleteConfirmation(event.target.value)}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={deletingAccount || deleteConfirmation !== "DELETE" || !acknowledgeBilling}
+              >
+                {deletingAccount ? "Deleting account…" : "Permanently delete account"}
               </Button>
             </form>
           </section>

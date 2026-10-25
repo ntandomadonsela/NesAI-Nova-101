@@ -18,6 +18,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
+import { apiUrl } from "@/lib/api-url";
 
 const demos = {
   Text: {
@@ -94,7 +95,7 @@ export function CorporateHome() {
     setError("");
     try {
       const website = String(new FormData(event.currentTarget).get("website") ?? "");
-      const response = await fetch("/api/leads", {
+      const response = await fetch(apiUrl("/api/leads"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

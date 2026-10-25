@@ -1,10 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { apiUrl } from "@/lib/api-url";
 import { SiteNav } from "@/components/site-nav";
 import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { userFacingError } from "@/lib/user-facing-error";
+import {
+  isNativeStudentApp,
+  loadNativePremiumProduct,
+  manageNativePremium,
+  purchaseNativePremium,
+  restoreNativePremium,
+} from "@/lib/native-purchases";
+import type { Product } from "@capgo/native-purchases";
 
 export const Route = createFileRoute("/upgrade")({
   head: () => ({
@@ -38,11 +47,35 @@ function UpgradePage() {
     id: string;
     current_period_end: string | null;
     status: string;
+    provider: string;
   } | null>(null);
   const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const [subscriptionLoadError, setSubscriptionLoadError] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const paymentReady = Boolean(PAYPAL_CLIENT_ID && PAYPAL_PLAN_ID);
+  const nativeApp = isNativeStudentApp();
+  const [nativeProduct, setNativeProduct] = useState<Product | null>(null);
+  const [nativeBusy, setNativeBusy] = useState(false);
+  const [nativeStoreError, setNativeStoreError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!nativeApp) return;
+    let cancelled = false;
+    void loadNativePremiumProduct().then(
+      (product) => {
+        if (!cancelled) setNativeProduct(product);
+      },
+      (error: unknown) => {
+        if (!cancelled)
+          setNativeStoreError(
+            userFacingError(error, "Premium is not available in this store yet."),
+          );
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [nativeApp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,18 +89,16 @@ function UpgradePage() {
       }
       const { data: subscription, error } = await supabase
         .from("subscriptions")
-        .select("id, current_period_end, status")
+        .select("id, current_period_end, status, provider")
         .in("status", ["active", "pending", "cancelled"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (!cancelled) {
         const stillEntitled =
-          subscription?.status === "active" ||
-          subscription?.status === "pending" ||
-          (subscription?.status === "cancelled" &&
-            Boolean(subscription.current_period_end) &&
-            Date.parse(subscription.current_period_end!) > Date.now());
+          !!subscription?.current_period_end &&
+          Date.parse(subscription.current_period_end!) > Date.now() &&
+          (subscription?.status === "active" || subscription?.status === "cancelled");
         setActiveSubscription(stillEntitled ? subscription : null);
         setSubscriptionLoadError(Boolean(error));
         setSubscriptionLoaded(true);
@@ -81,6 +112,18 @@ function UpgradePage() {
 
   async function cancelPremium() {
     if (!activeSubscription || cancelling) return;
+    if (nativeApp) {
+      if (activeSubscription.provider === "paypal") {
+        toast.info("This Premium plan is managed through the NesAI website.");
+        return;
+      }
+      try {
+        await manageNativePremium();
+      } catch (error) {
+        toast.error(userFacingError(error, "Could not open store subscription settings."));
+      }
+      return;
+    }
     if (
       !window.confirm(
         "Cancel your NesAI Premium subscription? This will stop future renewals and end Premium access.",
@@ -93,7 +136,7 @@ function UpgradePage() {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) throw new Error("Please sign in again to manage your subscription.");
-      const response = await fetch("/api/payments/paypal-cancel", {
+      const response = await fetch(apiUrl("/api/payments/paypal-cancel"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ subscriptionId: activeSubscription.id }),
@@ -150,7 +193,7 @@ function UpgradePage() {
             setStatus("processing");
             try {
               const { data: sessionData } = await supabase.auth.getSession();
-              const res = await fetch("/api/payments/paypal-subscribe", {
+              const res = await fetch(apiUrl("/api/payments/paypal-subscribe"), {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -169,7 +212,7 @@ function UpgradePage() {
                   await new Promise((resolve) => setTimeout(resolve, 2500));
                   const { data: refreshed, error: refreshError } = await supabase
                     .from("subscriptions")
-                    .select("id,current_period_end,status")
+                    .select("id,current_period_end,status,provider")
                     .eq("paypal_subscription_id", data.subscriptionID)
                     .maybeSingle();
                   if (!refreshError && refreshed?.status === "active") {
@@ -183,6 +226,7 @@ function UpgradePage() {
                   id: data.subscriptionID,
                   current_period_end: null,
                   status: "pending",
+                  provider: "paypal",
                 });
                 setStatus("idle");
                 return;
@@ -217,6 +261,20 @@ function UpgradePage() {
     };
   }, [signedIn, subscriptionLoaded, activeSubscription, subscriptionLoadError, navigate]);
 
+  async function runNativePurchase(restore = false) {
+    setNativeBusy(true);
+    try {
+      if (restore) await restoreNativePremium();
+      else await purchaseNativePremium();
+      toast.success("Premium is active. Happy studying!");
+      window.location.reload();
+    } catch (error) {
+      toast.error(userFacingError(error, "The store purchase could not be completed."));
+    } finally {
+      setNativeBusy(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background nesai-app-surface">
       <SiteNav />
@@ -227,8 +285,9 @@ function UpgradePage() {
             Study without limits.
           </h1>
           <p className="mt-3 text-muted-foreground">
-            US$4 per month. Cancel anytime. Pay with PayPal or, when eligible, a debit or credit
-            card.
+            {nativeApp
+              ? "Subscribe securely through your app store. Manage or cancel anytime in your store account."
+              : "US$4 per month. Cancel anytime. Pay with PayPal or, when eligible, a debit or credit card."}
           </p>
         </div>
 
@@ -254,7 +313,13 @@ function UpgradePage() {
                 </span>
               </div>
               <button type="button" onClick={() => void cancelPremium()} disabled={cancelling}>
-                {cancelling ? "Cancelling…" : "Cancel renewal"}
+                {nativeApp
+                  ? activeSubscription.provider === "paypal"
+                    ? "Managed on website"
+                    : "Manage subscription"
+                  : cancelling
+                    ? "Cancelling…"
+                    : "Cancel renewal"}
               </button>
             </div>
           )}
@@ -310,6 +375,38 @@ function UpgradePage() {
               </div>
             )}
             {signedIn &&
+              nativeApp &&
+              subscriptionLoaded &&
+              !activeSubscription &&
+              !subscriptionLoadError && (
+                <div className="space-y-3">
+                  {nativeStoreError && (
+                    <p className="text-sm text-muted-foreground">{nativeStoreError}</p>
+                  )}
+                  <button
+                    type="button"
+                    className="w-full rounded-full bg-primary px-5 py-3 font-medium text-primary-foreground disabled:opacity-60"
+                    disabled={!nativeProduct || nativeBusy}
+                    onClick={() => void runNativePurchase()}
+                  >
+                    {nativeBusy
+                      ? "Contacting your app store…"
+                      : nativeProduct
+                        ? `Subscribe${nativeProduct.priceString ? ` · ${nativeProduct.priceString}` : ""}`
+                        : "Loading store subscription…"}
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full py-2 text-sm underline"
+                    disabled={nativeBusy}
+                    onClick={() => void runNativePurchase(true)}
+                  >
+                    Restore purchases
+                  </button>
+                </div>
+              )}
+            {signedIn &&
+              !nativeApp &&
               subscriptionLoaded &&
               !activeSubscription &&
               !subscriptionLoadError &&
@@ -319,6 +416,7 @@ function UpgradePage() {
                 </p>
               )}
             {signedIn &&
+              !nativeApp &&
               subscriptionLoaded &&
               !activeSubscription &&
               !subscriptionLoadError &&

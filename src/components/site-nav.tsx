@@ -61,6 +61,9 @@ export function SiteNav() {
           <Link to="/upgrade" onClick={() => setOpen(false)}>
             <CreditCard size={16} /> Premium
           </Link>
+          <Link to="/privacy" onClick={() => setOpen(false)}>
+            Privacy
+          </Link>
           {isAdmin && (
             <Link to="/admin" onClick={() => setOpen(false)}>
               <ShieldCheck size={16} /> Admin dashboard

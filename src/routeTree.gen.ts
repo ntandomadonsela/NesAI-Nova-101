@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountDeletionRouteImport } from './routes/account-deletion'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as EnterpriseAiDataRouteImport } from './routes/enterprise-ai-data'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as StudentsRouteImport } from './routes/students'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
@@ -22,9 +24,13 @@ import { Route as VaultRouteImport } from './routes/vault'
 import { Route as AdminUploadRouteImport } from './routes/admin/upload'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLeadsRouteImport } from './routes/api/leads'
+import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delete'
 import { Route as ApiAdminConsoleRouteImport } from './routes/api/admin/console'
 import { Route as ApiAdminIngestRouteImport } from './routes/api/admin/ingest'
 import { Route as ApiAdminResourcesRouteImport } from './routes/api/admin/resources'
+import { Route as ApiPaymentsAppleNotificationsRouteImport } from './routes/api/payments/apple-notifications'
+import { Route as ApiPaymentsGoogleNotificationsRouteImport } from './routes/api/payments/google-notifications'
+import { Route as ApiPaymentsMobileSubscribeRouteImport } from './routes/api/payments/mobile-subscribe'
 import { Route as ApiPaymentsPaypalCancelRouteImport } from './routes/api/payments/paypal-cancel'
 import { Route as ApiPaymentsPaypalSubscribeRouteImport } from './routes/api/payments/paypal-subscribe'
 import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payments/paypal-webhook'
@@ -32,6 +38,11 @@ import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payme
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDeletionRoute = AccountDeletionRouteImport.update({
+  id: '/account-deletion',
+  path: '/account-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -57,6 +68,11 @@ const EnterpriseAiDataRoute = EnterpriseAiDataRouteImport.update({
 const MarketplaceRoute = MarketplaceRouteImport.update({
   id: '/marketplace',
   path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -94,6 +110,11 @@ const ApiLeadsRoute = ApiLeadsRouteImport.update({
   path: '/api/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountDeleteRoute = ApiAccountDeleteRouteImport.update({
+  id: '/api/account/delete',
+  path: '/api/account/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminConsoleRoute = ApiAdminConsoleRouteImport.update({
   id: '/api/admin/console',
   path: '/api/admin/console',
@@ -109,6 +130,24 @@ const ApiAdminResourcesRoute = ApiAdminResourcesRouteImport.update({
   path: '/api/admin/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentsAppleNotificationsRoute =
+  ApiPaymentsAppleNotificationsRouteImport.update({
+    id: '/api/payments/apple-notifications',
+    path: '/api/payments/apple-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPaymentsGoogleNotificationsRoute =
+  ApiPaymentsGoogleNotificationsRouteImport.update({
+    id: '/api/payments/google-notifications',
+    path: '/api/payments/google-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPaymentsMobileSubscribeRoute =
+  ApiPaymentsMobileSubscribeRouteImport.update({
+    id: '/api/payments/mobile-subscribe',
+    path: '/api/payments/mobile-subscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPaymentsPaypalCancelRoute = ApiPaymentsPaypalCancelRouteImport.update({
   id: '/api/payments/paypal-cancel',
   path: '/api/payments/paypal-cancel',
@@ -129,11 +168,13 @@ const ApiPaymentsPaypalWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
@@ -141,20 +182,26 @@ export interface FileRoutesByFullPath {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/payments/apple-notifications': typeof ApiPaymentsAppleNotificationsRoute
+  '/api/payments/google-notifications': typeof ApiPaymentsGoogleNotificationsRoute
+  '/api/payments/mobile-subscribe': typeof ApiPaymentsMobileSubscribeRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
@@ -162,9 +209,13 @@ export interface FileRoutesByTo {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/payments/apple-notifications': typeof ApiPaymentsAppleNotificationsRoute
+  '/api/payments/google-notifications': typeof ApiPaymentsGoogleNotificationsRoute
+  '/api/payments/mobile-subscribe': typeof ApiPaymentsMobileSubscribeRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -172,11 +223,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
@@ -184,9 +237,13 @@ export interface FileRoutesById {
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/payments/apple-notifications': typeof ApiPaymentsAppleNotificationsRoute
+  '/api/payments/google-notifications': typeof ApiPaymentsGoogleNotificationsRoute
+  '/api/payments/mobile-subscribe': typeof ApiPaymentsMobileSubscribeRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
@@ -195,11 +252,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account-deletion'
     | '/admin'
     | '/auth'
     | '/chat'
     | '/enterprise-ai-data'
     | '/marketplace'
+    | '/privacy'
     | '/profile'
     | '/students'
     | '/upgrade'
@@ -207,20 +266,26 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/account/delete'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/payments/apple-notifications'
+    | '/api/payments/google-notifications'
+    | '/api/payments/mobile-subscribe'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account-deletion'
     | '/admin'
     | '/auth'
     | '/chat'
     | '/enterprise-ai-data'
     | '/marketplace'
+    | '/privacy'
     | '/profile'
     | '/students'
     | '/upgrade'
@@ -228,20 +293,26 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/account/delete'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/payments/apple-notifications'
+    | '/api/payments/google-notifications'
+    | '/api/payments/mobile-subscribe'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
   id:
     | '__root__'
     | '/'
+    | '/account-deletion'
     | '/admin'
     | '/auth'
     | '/chat'
     | '/enterprise-ai-data'
     | '/marketplace'
+    | '/privacy'
     | '/profile'
     | '/students'
     | '/upgrade'
@@ -249,9 +320,13 @@ export interface FileRouteTypes {
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/account/delete'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/payments/apple-notifications'
+    | '/api/payments/google-notifications'
+    | '/api/payments/mobile-subscribe'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
@@ -259,20 +334,26 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountDeletionRoute: typeof AccountDeletionRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
   EnterpriseAiDataRoute: typeof EnterpriseAiDataRoute
   MarketplaceRoute: typeof MarketplaceRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   StudentsRoute: typeof StudentsRoute
   UpgradeRoute: typeof UpgradeRoute
   VaultRoute: typeof VaultRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiLeadsRoute: typeof ApiLeadsRoute
+  ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
   ApiAdminConsoleRoute: typeof ApiAdminConsoleRoute
   ApiAdminIngestRoute: typeof ApiAdminIngestRoute
   ApiAdminResourcesRoute: typeof ApiAdminResourcesRoute
+  ApiPaymentsAppleNotificationsRoute: typeof ApiPaymentsAppleNotificationsRoute
+  ApiPaymentsGoogleNotificationsRoute: typeof ApiPaymentsGoogleNotificationsRoute
+  ApiPaymentsMobileSubscribeRoute: typeof ApiPaymentsMobileSubscribeRoute
   ApiPaymentsPaypalCancelRoute: typeof ApiPaymentsPaypalCancelRoute
   ApiPaymentsPaypalSubscribeRoute: typeof ApiPaymentsPaypalSubscribeRoute
   ApiPaymentsPaypalWebhookRoute: typeof ApiPaymentsPaypalWebhookRoute
@@ -285,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account-deletion': {
+      id: '/account-deletion'
+      path: '/account-deletion'
+      fullPath: '/account-deletion'
+      preLoaderRoute: typeof AccountDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -320,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/marketplace'
       fullPath: '/marketplace'
       preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -371,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/account/delete': {
+      id: '/api/account/delete'
+      path: '/api/account/delete'
+      fullPath: '/api/account/delete'
+      preLoaderRoute: typeof ApiAccountDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/console': {
       id: '/api/admin/console'
       path: '/api/admin/console'
@@ -390,6 +492,27 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/resources'
       fullPath: '/api/admin/resources'
       preLoaderRoute: typeof ApiAdminResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/apple-notifications': {
+      id: '/api/payments/apple-notifications'
+      path: '/api/payments/apple-notifications'
+      fullPath: '/api/payments/apple-notifications'
+      preLoaderRoute: typeof ApiPaymentsAppleNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/google-notifications': {
+      id: '/api/payments/google-notifications'
+      path: '/api/payments/google-notifications'
+      fullPath: '/api/payments/google-notifications'
+      preLoaderRoute: typeof ApiPaymentsGoogleNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/mobile-subscribe': {
+      id: '/api/payments/mobile-subscribe'
+      path: '/api/payments/mobile-subscribe'
+      fullPath: '/api/payments/mobile-subscribe'
+      preLoaderRoute: typeof ApiPaymentsMobileSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/paypal-cancel': {
@@ -428,20 +551,26 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountDeletionRoute: AccountDeletionRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
   EnterpriseAiDataRoute: EnterpriseAiDataRoute,
   MarketplaceRoute: MarketplaceRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   StudentsRoute: StudentsRoute,
   UpgradeRoute: UpgradeRoute,
   VaultRoute: VaultRoute,
   ApiChatRoute: ApiChatRoute,
   ApiLeadsRoute: ApiLeadsRoute,
+  ApiAccountDeleteRoute: ApiAccountDeleteRoute,
   ApiAdminConsoleRoute: ApiAdminConsoleRoute,
   ApiAdminIngestRoute: ApiAdminIngestRoute,
   ApiAdminResourcesRoute: ApiAdminResourcesRoute,
+  ApiPaymentsAppleNotificationsRoute: ApiPaymentsAppleNotificationsRoute,
+  ApiPaymentsGoogleNotificationsRoute: ApiPaymentsGoogleNotificationsRoute,
+  ApiPaymentsMobileSubscribeRoute: ApiPaymentsMobileSubscribeRoute,
   ApiPaymentsPaypalCancelRoute: ApiPaymentsPaypalCancelRoute,
   ApiPaymentsPaypalSubscribeRoute: ApiPaymentsPaypalSubscribeRoute,
   ApiPaymentsPaypalWebhookRoute: ApiPaymentsPaypalWebhookRoute,

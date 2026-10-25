@@ -18,6 +18,7 @@ import { SiteNav } from "@/components/site-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { userFacingError } from "@/lib/user-facing-error";
+import { apiUrl } from "@/lib/api-url";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,10 +26,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
-    meta: [
-      { title: "NesAI Administration" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "NesAI Administration" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminDashboard,
 });
@@ -80,7 +78,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = data.session?.access_token;
   if (!token) throw new Error("Your session has expired. Sign in again to open the admin console.");
 
-  const response = await fetch(path, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     headers: {
       ...(init?.headers ?? {}),
@@ -196,7 +194,7 @@ function AdminDashboard() {
 
       if (groundAi) {
         const { data: session } = await supabase.auth.getSession();
-        const ingestResponse = await fetch("/api/admin/ingest", {
+        const ingestResponse = await fetch(apiUrl("/api/admin/ingest"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -206,7 +204,9 @@ function AdminDashboard() {
         });
         if (!ingestResponse.ok) {
           const body = await ingestResponse.json().catch(() => ({}));
-          toast.warning("The document was uploaded, but AI indexing did not finish. Please try again later.");
+          toast.warning(
+            "The document was uploaded, but AI indexing did not finish. Please try again later.",
+          );
         } else {
           toast.success("Document uploaded and indexed for the AI tutor.");
         }
@@ -223,7 +223,12 @@ function AdminDashboard() {
       await queryClient.invalidateQueries({ queryKey: ["resources"] });
     } catch (error) {
       console.error("Admin upload failed", error);
-      toast.error(userFacingError(error, "The upload couldn’t be completed. Please check the file and try again."));
+      toast.error(
+        userFacingError(
+          error,
+          "The upload couldn’t be completed. Please check the file and try again.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
