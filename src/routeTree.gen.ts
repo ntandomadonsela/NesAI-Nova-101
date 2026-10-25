@@ -13,7 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as EnterpriseAiDataRouteImport } from './routes/enterprise-ai-data'
+import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as StudentsRouteImport } from './routes/students'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as AdminUploadRouteImport } from './routes/admin/upload'
@@ -46,9 +49,24 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EnterpriseAiDataRoute = EnterpriseAiDataRouteImport.update({
+  id: '/enterprise-ai-data',
+  path: '/enterprise-ai-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceRoute = MarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentsRoute = StudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UpgradeRoute = UpgradeRouteImport.update({
@@ -114,7 +132,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/enterprise-ai-data': typeof EnterpriseAiDataRoute
+  '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
@@ -132,7 +153,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/enterprise-ai-data': typeof EnterpriseAiDataRoute
+  '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
@@ -151,7 +175,10 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/enterprise-ai-data': typeof EnterpriseAiDataRoute
+  '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/students': typeof StudentsRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
@@ -171,7 +198,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/enterprise-ai-data'
+    | '/marketplace'
     | '/profile'
+    | '/students'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
@@ -189,7 +219,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/enterprise-ai-data'
+    | '/marketplace'
     | '/profile'
+    | '/students'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
@@ -207,7 +240,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/enterprise-ai-data'
+    | '/marketplace'
     | '/profile'
+    | '/students'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
@@ -226,7 +262,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
+  EnterpriseAiDataRoute: typeof EnterpriseAiDataRoute
+  MarketplaceRoute: typeof MarketplaceRoute
   ProfileRoute: typeof ProfileRoute
+  StudentsRoute: typeof StudentsRoute
   UpgradeRoute: typeof UpgradeRoute
   VaultRoute: typeof VaultRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -269,11 +308,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/enterprise-ai-data': {
+      id: '/enterprise-ai-data'
+      path: '/enterprise-ai-data'
+      fullPath: '/enterprise-ai-data'
+      preLoaderRoute: typeof EnterpriseAiDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace': {
+      id: '/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/students': {
+      id: '/students'
+      path: '/students'
+      fullPath: '/students'
+      preLoaderRoute: typeof StudentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upgrade': {
@@ -371,7 +431,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
+  EnterpriseAiDataRoute: EnterpriseAiDataRoute,
+  MarketplaceRoute: MarketplaceRoute,
   ProfileRoute: ProfileRoute,
+  StudentsRoute: StudentsRoute,
   UpgradeRoute: UpgradeRoute,
   VaultRoute: VaultRoute,
   ApiChatRoute: ApiChatRoute,

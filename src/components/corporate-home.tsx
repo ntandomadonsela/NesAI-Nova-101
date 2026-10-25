@@ -152,7 +152,7 @@ export function CorporateHome() {
             {menuOpen ? <X /> : <Menu />}
           </button>
           <nav id="primary-navigation" className={menuOpen ? "corp-links open" : "corp-links"}>
-            <a href="#services" onClick={() => setMenuOpen(false)}>
+            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>
               Enterprise services
             </a>
             <a href="#workflow" onClick={() => setMenuOpen(false)}>
@@ -161,7 +161,7 @@ export function CorporateHome() {
             <a href="#ecosystem" onClick={() => setMenuOpen(false)}>
               Our ecosystem
             </a>
-            <a href="https://marketplace.nesai.co.za">
+            <a href="/marketplace">
               Marketplace <ArrowDownRight size={13} />
             </a>
             <div className="corp-nav-ctas">
@@ -800,7 +800,7 @@ export function CorporateHome() {
               </p>
             </div>
             <div className="corp-ecosystem-grid">
-              <a href="#contact" className="corp-eco-card">
+              <a href="/enterprise-ai-data" className="corp-eco-card">
                 <span>FOR ENTERPRISE</span>
                 <BrainCircuit />
                 <h3>Build better AI</h3>
@@ -810,7 +810,7 @@ export function CorporateHome() {
                 </b>
                 <i>01</i>
               </a>
-              <a href="https://marketplace.nesai.co.za" className="corp-eco-card">
+              <a href="/marketplace" className="corp-eco-card">
                 <span>BUYERS & SELLERS</span>
                 <Boxes />
                 <h3>Explore the marketplace</h3>
@@ -820,7 +820,7 @@ export function CorporateHome() {
                 </b>
                 <i>02</i>
               </a>
-              <a href="/auth?mode=signup" className="corp-eco-card">
+              <a href="/students" className="corp-eco-card">
                 <span>STUDENTS & ACADEMIA</span>
                 <GraduationCap />
                 <h3>Learn with NesAI</h3>
@@ -1030,10 +1030,10 @@ export function CorporateHome() {
             </a>
             <p>Human intelligence for better AI.</p>
             <div className="corp-footer-links">
-              <a href="#services">Enterprise services</a>
-              <a href="https://marketplace.nesai.co.za">Marketplace</a>
+              <a href="/enterprise-ai-data">Enterprise AI data</a>
+              <a href="/marketplace">Marketplace</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor portal</a>
-              <a href="/auth?mode=signup">Students & academia</a>
+              <a href="/students">Students & academia</a>
               <a href="#contact">Enterprise contact</a>
             </div>
           </div>
