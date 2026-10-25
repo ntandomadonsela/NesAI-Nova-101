@@ -83,8 +83,8 @@ export async function getPlan(planId: string) {
   }>;
 }
 
-/** Enforce the advertised R50 monthly price against PayPal's server-side plan. */
-export function isR50MonthlyPlan(plan: Awaited<ReturnType<typeof getPlan>>) {
+/** Enforce the advertised USD 4 monthly price against PayPal's server-side plan. */
+export function isPremiumMonthlyPlan(plan: Awaited<ReturnType<typeof getPlan>>) {
   if (plan.status !== "ACTIVE" || plan.billing_cycles?.length !== 1) return false;
   const [cycle] = plan.billing_cycles;
   const price = cycle.pricing_scheme?.fixed_price;
@@ -94,21 +94,21 @@ export function isR50MonthlyPlan(plan: Awaited<ReturnType<typeof getPlan>>) {
     cycle.total_cycles === 0 &&
     cycle.frequency.interval_unit === "MONTH" &&
     cycle.frequency.interval_count === 1 &&
-    price?.currency_code === "ZAR" &&
-    Number(price.value) === 50 &&
+    price?.currency_code === "USD" &&
+    Number(price.value) === 4 &&
     (!setupFee || Number(setupFee.value) === 0)
   );
 }
 
-export function hasPaidR50MonthlyCycle(subscription: Awaited<ReturnType<typeof getSubscription>>) {
+export function hasPaidPremiumMonthlyCycle(subscription: Awaited<ReturnType<typeof getSubscription>>) {
   const payment = subscription.billing_info?.last_payment;
   const paymentTime = payment?.time ? Date.parse(payment.time) : Number.NaN;
   const createdTime = subscription.create_time ? Date.parse(subscription.create_time) : Number.NaN;
   return (
     subscription.status === "ACTIVE" &&
     subscription.plan_overridden !== true &&
-    payment?.amount?.currency_code === "ZAR" &&
-    Number(payment.amount.value) === 50 &&
+    payment?.amount?.currency_code === "USD" &&
+    Number(payment.amount.value) === 4 &&
     Number.isFinite(paymentTime) &&
     (!Number.isFinite(createdTime) || paymentTime >= createdTime) &&
     (subscription.billing_info?.failed_payments_count ?? 0) === 0

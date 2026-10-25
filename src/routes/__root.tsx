@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/error-reporting";
@@ -40,7 +40,10 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
-  const actualError = error instanceof Error ? error : new Error(String(error));
+  const actualError = useMemo(
+    () => (error instanceof Error ? error : new Error(String(error))),
+    [error],
+  );
   console.error(actualError);
   const router = useRouter();
   useEffect(() => {
@@ -81,19 +84,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NesAI: AI Study Platform for South African Students" },
+      { title: "NesAI | Human-led data for AI teams" },
       {
         name: "description",
         content:
-          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
+          "NesAI helps AI teams create, review and evaluate training data with trained contributors and project-specific workflows.",
       },
       { name: "author", content: "NesAI" },
       { property: "og:site_name", content: "NesAI" },
-      { property: "og:title", content: "NesAI: AI Study Platform for South African Students" },
+      { property: "og:title", content: "NesAI | Human-led data for AI teams" },
       {
         property: "og:description",
-        content:
-          "Get step-by-step AI tutoring, exam papers, memos and study notes for South African school and university subjects.",
+        content: "Human-led training data, annotation and model evaluation for AI teams.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_ZA" },
@@ -101,8 +103,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/nesai-favicon.png", type: "image/png", sizes: "128x128" },
+      { rel: "apple-touch-icon", href: "/nesai-favicon.png", sizes: "128x128" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

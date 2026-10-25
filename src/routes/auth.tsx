@@ -21,6 +21,10 @@ const searchSchema = z.object({
   redirect: z.string().optional(),
 });
 
+function getPostAuthRoute(redirect?: string): "/chat" | "/upgrade" {
+  return redirect === "/upgrade" ? "/upgrade" : "/chat";
+}
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -54,7 +58,8 @@ function AuthPage() {
   const [pendingSignupEmail, setPendingSignupEmail] = useState("");
   const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const supabaseConfigured = Boolean(
-    import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    import.meta.env.VITE_SUPABASE_URL &&
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY),
   );
 
   useEffect(() => {
@@ -69,7 +74,7 @@ function AuthPage() {
     if (!supabaseConfigured) return;
     supabase.auth.getSession().then(({ data }) => {
       if (data.session && requestedMode !== "recovery")
-        navigate({ to: (redirect as any) ?? "/chat" });
+        navigate({ to: getPostAuthRoute(redirect) });
     });
   }, [navigate, redirect, supabaseConfigured, requestedMode]);
 
@@ -77,7 +82,7 @@ function AuthPage() {
     e.preventDefault();
     setSignupNotice("");
     if (!supabaseConfigured) {
-      toast.error("Account access is not configured yet. Please try again later.");
+      toast.error("Account access is temporarily unavailable. Please try again later.");
       return;
     }
     setLoading(true);
@@ -96,7 +101,7 @@ function AuthPage() {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
         toast.success("Password updated. You can now continue to your study desk.");
-        navigate({ to: (redirect as any) ?? "/chat" });
+        navigate({ to: getPostAuthRoute(redirect) });
         return;
       }
       if (mode === "signup") {
@@ -133,12 +138,14 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Welcome back.");
       }
-      navigate({ to: (redirect as any) ?? "/chat" });
-    } catch (err: any) {
-      const message = err?.message ?? "";
-      toast.error(message === "Failed to fetch"
-        ? "We couldn’t reach your account service. Please try again in a moment."
-        : userFacingError(err, "We couldn’t complete sign-in. Check your details and try again."));
+      navigate({ to: getPostAuthRoute(redirect) });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "";
+      toast.error(
+        message === "Failed to fetch"
+          ? "We couldn’t reach your account service. Please try again in a moment."
+          : userFacingError(err, "We couldn’t complete sign-in. Check your details and try again."),
+      );
     } finally {
       setLoading(false);
     }
@@ -158,7 +165,9 @@ function AuthPage() {
       if (error) throw error;
       toast.success("We requested another confirmation email. Check your junk folder too.");
     } catch (error) {
-      toast.error(userFacingError(error, "We couldn’t resend the confirmation email. Please try again."));
+      toast.error(
+        userFacingError(error, "We couldn’t resend the confirmation email. Please try again."),
+      );
     } finally {
       setResendingConfirmation(false);
     }
@@ -231,8 +240,7 @@ function AuthPage() {
 
             {!supabaseConfigured && (
               <div className="auth-config-notice" role="status">
-                Account sign-up is temporarily unavailable. The site owner needs to add the Supabase
-                URL and publishable key in the deployment settings.
+                Sign-in and account creation are temporarily unavailable. Please try again later.
               </div>
             )}
 

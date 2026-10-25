@@ -62,7 +62,7 @@ PAYPAL_ENV=sandbox                # "sandbox" while testing, "live" when ready
 PAYPAL_CLIENT_ID=...
 PAYPAL_CLIENT_SECRET=...
 PAYPAL_WEBHOOK_ID=...
-PAYPAL_PLAN_ID=...              # server-side verified R50 ZAR monthly plan
+PAYPAL_PLAN_ID=...              # server-side verified USD 4 monthly plan
 VITE_PAYPAL_CLIENT_ID=...         # same value as PAYPAL_CLIENT_ID, exposed to the browser
 VITE_PAYPAL_PLAN_ID=...
 AI_GATEWAY_MODEL=gpt-4o-mini
@@ -100,11 +100,11 @@ and `vite.config.ts` selects it when `VERCEL` is not set.
 2. **Apps & Credentials** → create an app → copy the **Client ID** and **Secret** into
    `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`. Do this once in Sandbox to test, and again
    in Live when you're ready to accept real money.
-3. **Create a subscription plan** for **ZAR 50.00 every month**, with no trial and no setup
+3. **Create a subscription plan** for **USD 4.00 every month**, with no trial and no setup
    fee. Create a Product ("NesAI Nova Premium") and an active recurring Plan in PayPal.
    Put the same Plan ID in both `PAYPAL_PLAN_ID` (server-side) and
    `VITE_PAYPAL_PLAN_ID` (public SDK setting). The server checks the live PayPal plan is
-   exactly ZAR 50 monthly before activating access. The checkout offers PayPal and requests
+   exactly USD 4 monthly before activating access. The checkout offers PayPal and requests
    the card button; PayPal displays card checkout only when the merchant and payer are eligible.
 4. **Set up the webhook**: in the same app, add a webhook pointing to
    `https://yourdomain.com/api/payments/paypal-webhook`, subscribed at minimum to:

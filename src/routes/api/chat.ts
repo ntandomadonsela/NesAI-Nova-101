@@ -5,9 +5,10 @@ import { createAiGateway } from "@/lib/ai-gateway.server";
 import { createSubjectAgent, getAgent } from "@/lib/subject-agents";
 
 const STREAM_ERROR_MARKER = "\n[[NESAI_STREAM_ERROR]]";
-// Model id format depends on your provider, e.g. "gpt-4o-mini" for OpenAI,
-// "google/gemini-2.5-flash" for OpenRouter. Override via AI_GATEWAY_MODEL.
-const MODEL_ID = process.env.AI_GATEWAY_MODEL?.trim() || "gpt-4o-mini";
+// Override the provider-specific model identifier with AI_GATEWAY_MODEL.
+const MODEL_ID =
+  process.env.AI_GATEWAY_MODEL?.trim() ||
+  (process.env.GEMINI_API_KEY?.trim() ? "gemini-3.8-flash" : "gpt-4o-mini");
 
 function getProviderErrorMessage(error: unknown): string {
   const status =
@@ -17,13 +18,8 @@ function getProviderErrorMessage(error: unknown): string {
         ? Number(error.status)
         : undefined;
 
-  if (status === 401 || status === 403)
-    return "The AI provider rejected its API key. Check OPENAI_API_KEY or AI_GATEWAY_API_KEY in Vercel.";
-  if (status === 404)
-    return `The AI model “${MODEL_ID}” was not found. Check AI_GATEWAY_MODEL in Vercel.`;
-  if (status === 402) return "The AI provider account has run out of credits.";
-  if (status === 429) return "The AI provider is busy. Please try again shortly.";
-  return "The AI provider could not answer this request. Please try again shortly.";
+  if (status === 429) return "The tutor is busy right now. Please try again shortly.";
+  return "The tutor is temporarily unavailable. Please try again later.";
 }
 
 export const Route = createFileRoute("/api/chat")({
@@ -42,12 +38,12 @@ export const Route = createFileRoute("/api/chat")({
           process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
         const publishableKey =
           process.env.SUPABASE_PUBLISHABLE_KEY?.trim() ||
-          process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+          process.env.VITE_SUPABASE_ANON_KEY?.trim();
         if (!supabaseUrl || !publishableKey) {
           return Response.json(
             {
-              error:
-                "Study Desk is missing its Supabase server configuration. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or the matching VITE_ variables) in Vercel.",
+              error: "Study Desk is temporarily unavailable. Please try again later.",
             },
             { status: 500 },
           );
@@ -68,9 +64,7 @@ export const Route = createFileRoute("/api/chat")({
         // 2. Load profile & enforce daily limit
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select(
-            "id, academic_level, subjects, degree_name, institution, study_year",
-          )
+          .select("id, academic_level, subjects, degree_name, institution, study_year")
           .eq("id", userId)
           .maybeSingle();
 
@@ -85,13 +79,13 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Profile not found", { status: 404 });
         }
 
+        const geminiKey = process.env.GEMINI_API_KEY?.trim();
         const gatewayKey =
-          process.env.AI_GATEWAY_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+          process.env.AI_GATEWAY_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim() || geminiKey;
         if (!gatewayKey) {
           return Response.json(
             {
-              error:
-                "The AI key is missing. Add OPENAI_API_KEY or AI_GATEWAY_API_KEY to Vercel for Production, then redeploy.",
+              error: "The tutor is temporarily unavailable. Please try again later.",
             },
             { status: 500 },
           );
@@ -127,16 +121,35 @@ export const Route = createFileRoute("/api/chat")({
         ) {
           return new Response("Bad request", { status: 400 });
         }
-        const inputCharacters = body.messages.reduce((total, message) => total + message.content.length, 0);
+        const inputCharacters = body.messages.reduce(
+          (total, message) => total + message.content.length,
+          0,
+        );
         if (inputCharacters > 40_000) {
-          return Response.json({ error: "This conversation is too long. Start a new chat and try again." }, { status: 413 });
+          return Response.json(
+            { error: "This conversation is too long. Start a new chat and try again." },
+            { status: 413 },
+          );
         }
         if (
-          (body.agentId !== undefined && (typeof body.agentId !== "string" || body.agentId.length > 100)) ||
-          (body.subjectName !== undefined && (typeof body.subjectName !== "string" || body.subjectName.length > 100)) ||
-          (body.resourceContext !== undefined && body.resourceContext !== null && typeof body.resourceContext !== "object") ||
-          Boolean(body.resourceContext && [body.resourceContext.id, body.resourceContext.title, body.resourceContext.subject, body.resourceContext.year]
-            .some((value) => value !== undefined && (typeof value !== "string" || value.length > 200)))
+          (body.agentId !== undefined &&
+            (typeof body.agentId !== "string" || body.agentId.length > 100)) ||
+          (body.subjectName !== undefined &&
+            (typeof body.subjectName !== "string" || body.subjectName.length > 100)) ||
+          (body.resourceContext !== undefined &&
+            body.resourceContext !== null &&
+            typeof body.resourceContext !== "object") ||
+          Boolean(
+            body.resourceContext &&
+            [
+              body.resourceContext.id,
+              body.resourceContext.title,
+              body.resourceContext.subject,
+              body.resourceContext.year,
+            ].some(
+              (value) => value !== undefined && (typeof value !== "string" || value.length > 200),
+            ),
+          )
         ) {
           return new Response("Bad request", { status: 400 });
         }
@@ -209,7 +222,10 @@ export const Route = createFileRoute("/api/chat")({
           ({ supabaseAdmin } = await import("@/integrations/supabase/client.server"));
         } catch (error) {
           console.error("Study Desk quota service is not configured", error);
-          return Response.json({ error: "The study service is temporarily unavailable." }, { status: 503 });
+          return Response.json(
+            { error: "The study service is temporarily unavailable." },
+            { status: 503 },
+          );
         }
         const requestId = crypto.randomUUID();
         let quotaData;
@@ -221,11 +237,17 @@ export const Route = createFileRoute("/api/chat")({
           ));
         } catch (error) {
           console.error("Study Desk quota service is not configured", error);
-          return Response.json({ error: "The study service is temporarily unavailable." }, { status: 503 });
+          return Response.json(
+            { error: "The study service is temporarily unavailable." },
+            { status: 503 },
+          );
         }
         if (quotaError) {
           console.error("Could not reserve Study Desk usage", quotaError);
-          return Response.json({ error: "The study service is temporarily unavailable." }, { status: 503 });
+          return Response.json(
+            { error: "The study service is temporarily unavailable." },
+            { status: 503 },
+          );
         }
         const quota = quotaData as { allowed?: boolean } | null;
         if (!quota?.allowed) {
@@ -245,8 +267,9 @@ export const Route = createFileRoute("/api/chat")({
                 completed,
               });
               if (error) console.error("Could not finalize Study Desk quota reservation", error);
-            })()
-              .catch((error: unknown) => console.error("Could not finalize Study Desk quota reservation", error));
+            })().catch((error: unknown) =>
+              console.error("Could not finalize Study Desk quota reservation", error),
+            );
           }
           return quotaFinalization;
         };
@@ -254,7 +277,12 @@ export const Route = createFileRoute("/api/chat")({
         // 4. Call the configured AI gateway
         const gateway = createAiGateway(
           gatewayKey,
-          process.env.AI_GATEWAY_BASE_URL?.trim() || undefined,
+          process.env.AI_GATEWAY_BASE_URL?.trim() ||
+            (geminiKey &&
+            !process.env.AI_GATEWAY_API_KEY?.trim() &&
+            !process.env.OPENAI_API_KEY?.trim()
+              ? "https://generativelanguage.googleapis.com/v1beta/openai/"
+              : undefined),
         );
 
         let providerFailed = false;
@@ -267,7 +295,7 @@ export const Route = createFileRoute("/api/chat")({
             abortSignal: request.signal,
             onError: ({ error }) => {
               providerFailed = true;
-              console.error("AI provider stream failed", error);
+              console.error("AI provider stream failed.");
             },
           });
           const stream = new ReadableStream<string>({
@@ -276,19 +304,31 @@ export const Route = createFileRoute("/api/chat")({
                 for await (const textPart of result.textStream) controller.enqueue(textPart);
                 if (providerFailed) {
                   await finishQuota(false);
-                  controller.enqueue(`${STREAM_ERROR_MARKER}The AI provider could not answer this request. Please try again shortly.`);
+                  controller.enqueue(
+                    `${STREAM_ERROR_MARKER}The tutor is temporarily unavailable. Please try again later.`,
+                  );
                 } else {
                   await finishQuota(true);
                 }
               } catch (error) {
-                console.error("AI provider stream failed", error);
+                console.error("AI provider stream failed.");
                 await finishQuota(false);
-                try { controller.enqueue(`${STREAM_ERROR_MARKER}${getProviderErrorMessage(error)}`); } catch { /* client disconnected */ }
+                try {
+                  controller.enqueue(`${STREAM_ERROR_MARKER}${getProviderErrorMessage(error)}`);
+                } catch {
+                  /* client disconnected */
+                }
               } finally {
-                try { controller.close(); } catch { /* client disconnected */ }
+                try {
+                  controller.close();
+                } catch {
+                  /* client disconnected */
+                }
               }
             },
-            cancel() { void finishQuota(false); },
+            cancel() {
+              void finishQuota(false);
+            },
           });
           return new Response(stream.pipeThrough(new TextEncoderStream()), {
             headers: {
@@ -298,7 +338,7 @@ export const Route = createFileRoute("/api/chat")({
           });
         } catch (err: unknown) {
           await finishQuota(false);
-          console.error("AI gateway error", err);
+          console.error("AI gateway request failed.");
           const status =
             typeof err === "object" && err !== null && "statusCode" in err
               ? Number(err.statusCode)
@@ -306,34 +346,33 @@ export const Route = createFileRoute("/api/chat")({
           if (status === 429) {
             return new Response(
               JSON.stringify({
-                error: "The AI provider is busy. Please try again shortly.",
-                reason: "provider_rate",
+                error: "The tutor is busy right now. Please try again shortly.",
               }),
               { status: 429, headers: { "Content-Type": "application/json" } },
             );
           }
           if (status === 402) {
             return Response.json(
-              { error: "The AI provider account has run out of credits." },
+              { error: "The tutor is temporarily unavailable. Please try again later." },
               { status: 402 },
             );
           }
           if (status === 401 || status === 403) {
             return Response.json(
-              { error: "The AI provider rejected its API key. Check the key in Vercel settings." },
+              { error: "The tutor is temporarily unavailable. Please try again later." },
               { status: 502 },
             );
           }
           if (status === 404) {
             return Response.json(
               {
-                error: `The AI model “${MODEL_ID}” was not found. Check AI_GATEWAY_MODEL in Vercel.`,
+                error: "The tutor is temporarily unavailable. Please try again later.",
               },
               { status: 502 },
             );
           }
           return Response.json(
-            { error: "The AI provider could not answer this request. Please try again shortly." },
+            { error: "The tutor is temporarily unavailable. Please try again later." },
             { status: 502 },
           );
         }

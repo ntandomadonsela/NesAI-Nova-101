@@ -8,9 +8,13 @@ export async function requireAdmin(request: Request) {
   const supabaseUrl = process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
   const publishableKey =
     process.env.SUPABASE_PUBLISHABLE_KEY?.trim() ||
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.VITE_SUPABASE_ANON_KEY?.trim();
   if (!supabaseUrl || !publishableKey) {
-    return Response.json({ error: "Account service is not configured." }, { status: 503 });
+    return Response.json(
+      { error: "Staff services are temporarily unavailable. Please try again later." },
+      { status: 503 },
+    );
   }
 
   const userClient = createClient(supabaseUrl, publishableKey, {
@@ -25,7 +29,7 @@ export async function requireAdmin(request: Request) {
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
     return Response.json(
-      { error: "Admin data is not configured. Add SUPABASE_SERVICE_ROLE_KEY in Vercel." },
+      { error: "Staff services are temporarily unavailable. Please try again later." },
       { status: 503 },
     );
   }
@@ -36,7 +40,7 @@ export async function requireAdmin(request: Request) {
   } catch (error) {
     console.error("Admin service client is not configured", error);
     return Response.json(
-      { error: "Admin data is not configured. Add SUPABASE_SERVICE_ROLE_KEY in Vercel." },
+      { error: "Staff services are temporarily unavailable. Please try again later." },
       { status: 503 },
     );
   }

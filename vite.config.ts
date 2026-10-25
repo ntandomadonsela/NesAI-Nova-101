@@ -2,7 +2,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig } from "vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import tsConfigPaths from "vite-tsconfig-paths";
 import netlify from "@netlify/vite-plugin-tanstack-start";
 import { nitro } from "nitro/vite";
 
@@ -11,14 +10,9 @@ import { nitro } from "nitro/vite";
 const deploymentAdapter = process.env.VERCEL ? nitro() : netlify();
 
 export default defineConfig({
-  plugins: [
-    tsConfigPaths({ projects: ["./tsconfig.json"] }),
-    tailwindcss(),
-    tanstackStart(),
-    deploymentAdapter,
-    viteReact(),
-  ],
+  plugins: [tailwindcss(), tanstackStart(), deploymentAdapter, viteReact()],
   resolve: {
+    tsconfigPaths: true,
     dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-start"],
   },
 });

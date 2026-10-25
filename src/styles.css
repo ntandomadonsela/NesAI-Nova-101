@@ -3,6 +3,8 @@
 @import "tw-animate-css";
 @import "katex/dist/katex.min.css";
 
+@import "./corporate-home.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*

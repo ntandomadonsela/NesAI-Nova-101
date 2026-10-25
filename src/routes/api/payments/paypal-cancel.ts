@@ -9,10 +9,16 @@ export const Route = createFileRoute("/api/payments/paypal-cancel")({
         const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!token) return new Response("Unauthorized", { status: 401 });
 
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+        const supabaseUrl =
+          process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
+        const publishableKey =
+          process.env.SUPABASE_PUBLISHABLE_KEY?.trim() ||
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+          process.env.VITE_SUPABASE_ANON_KEY?.trim();
         if (!supabaseUrl || !publishableKey) {
-          return new Response("Account service is not configured", { status: 503 });
+          return new Response("This service is temporarily unavailable. Please try again later.", {
+            status: 503,
+          });
         }
 
         let body: { subscriptionId?: string };
@@ -86,7 +92,9 @@ export const Route = createFileRoute("/api/payments/paypal-cancel")({
           .in("status", ["active", "cancelled"]);
         if (remainingError) {
           console.error("Could not refresh remaining Premium access", remainingError);
-          return new Response("The plan was cancelled, but the account could not be refreshed", { status: 500 });
+          return new Response("The plan was cancelled, but the account could not be refreshed", {
+            status: 500,
+          });
         }
         const premiumActive = (remaining ?? []).some(
           (item) =>

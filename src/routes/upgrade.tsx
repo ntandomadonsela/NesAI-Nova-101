@@ -99,10 +99,15 @@ function UpgradePage() {
         body: JSON.stringify({ subscriptionId: activeSubscription.id }),
       });
       if (!response.ok) throw new Error("subscription_request_failed");
-      setActiveSubscription((current) => current ? { ...current, status: "cancelled" } : current);
+      setActiveSubscription((current) => (current ? { ...current, status: "cancelled" } : current));
       toast.success("Renewal cancelled. Premium stays available until the paid period ends.");
     } catch (error) {
-      toast.error(userFacingError(error, "We couldn’t cancel your subscription. Please try again or contact support."));
+      toast.error(
+        userFacingError(
+          error,
+          "We couldn’t cancel your subscription. Please try again or contact support.",
+        ),
+      );
     } finally {
       setCancelling(false);
     }
@@ -119,11 +124,12 @@ function UpgradePage() {
     )
       return;
 
+    const paypalContainer = paypalRef.current;
     setStatus("loading-sdk");
     const script = document.createElement("script");
     // vault=true + intent=subscription renders both the PayPal button AND a
     // "Debit or Credit Card" button, so no separate card processor is needed.
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription&currency=ZAR&enable-funding=card`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription&currency=USD&enable-funding=card`;
     script.async = true;
     script.onload = () => {
       const paypal = (window as unknown as { paypal?: PayPalNamespace }).paypal;
@@ -155,7 +161,9 @@ function UpgradePage() {
               if (!res.ok) throw new Error("subscription_activation_failed");
               const activation = (await res.json()) as { pending?: boolean };
               if (activation.pending) {
-                toast.info("Payment is being confirmed. We’ll unlock Premium as soon as PayPal confirms it.");
+                toast.info(
+                  "Payment is being confirmed. We’ll unlock Premium as soon as PayPal confirms it.",
+                );
                 setStatus("processing");
                 for (let attempt = 0; attempt < 8; attempt += 1) {
                   await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -171,7 +179,11 @@ function UpgradePage() {
                     return;
                   }
                 }
-                setActiveSubscription({ id: data.subscriptionID, current_period_end: null, status: "pending" });
+                setActiveSubscription({
+                  id: data.subscriptionID,
+                  current_period_end: null,
+                  status: "pending",
+                });
                 setStatus("idle");
                 return;
               }
@@ -200,7 +212,7 @@ function UpgradePage() {
     };
     document.body.appendChild(script);
     return () => {
-      if (paypalRef.current) paypalRef.current.replaceChildren();
+      paypalContainer?.replaceChildren();
       document.body.removeChild(script);
     };
   }, [signedIn, subscriptionLoaded, activeSubscription, subscriptionLoadError, navigate]);
@@ -215,7 +227,8 @@ function UpgradePage() {
             Study without limits.
           </h1>
           <p className="mt-3 text-muted-foreground">
-            R50 per month. Cancel anytime. Pay with PayPal or, when eligible, a debit or credit card.
+            US$4 per month. Cancel anytime. Pay with PayPal or, when eligible, a debit or credit
+            card.
           </p>
         </div>
 
@@ -225,7 +238,7 @@ function UpgradePage() {
               <span className="app-eyebrow">ONE PLAN. MORE ROOM TO LEARN.</span>
               <h2>Nova Premium</h2>
             </div>
-            <span className="premium-plan-badge">R50 / MONTH</span>
+            <span className="premium-plan-badge">US$4 / MONTH</span>
           </div>
           {activeSubscription?.status === "active" && (
             <div className="premium-active-status" role="status">
@@ -252,7 +265,8 @@ function UpgradePage() {
                 <span>
                   <strong>Renewal cancelled</strong>
                   <small>
-                    {activeSubscription.current_period_end && Date.parse(activeSubscription.current_period_end) > Date.now()
+                    {activeSubscription.current_period_end &&
+                    Date.parse(activeSubscription.current_period_end) > Date.now()
                       ? `Premium stays active until ${new Date(activeSubscription.current_period_end).toLocaleDateString()}.`
                       : "Premium access has ended."}
                   </small>
@@ -262,7 +276,8 @@ function UpgradePage() {
           )}
           {activeSubscription?.status === "pending" && (
             <p className="text-sm text-muted-foreground" role="status">
-              Your payment is being confirmed. Refresh this page in a few minutes; please don’t start another checkout while it is pending.
+              Your payment is being confirmed. Refresh this page in a few minutes; please don’t
+              start another checkout while it is pending.
             </p>
           )}
           <ul className="premium-perks space-y-3">
@@ -300,8 +315,7 @@ function UpgradePage() {
               !subscriptionLoadError &&
               !paymentReady && (
                 <p className="text-sm text-destructive">
-                  Secure checkout is being prepared. The site owner needs to add the PayPal client
-                  ID and plan ID in the deployment settings.
+                  Secure checkout is temporarily unavailable. Please try again later.
                 </p>
               )}
             {signedIn &&

@@ -1,16 +1,10 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+Disallow: /chat
+Disallow: /profile
+Disallow: /upgrade
 
-Sitemap: https://nesai.co.za/sitemap.xml
+Sitemap: https://www.nesai.co.za/sitemap.xml

@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   getPlan,
   getSubscription,
-  hasPaidR50MonthlyCycle,
-  isR50MonthlyPlan,
+  hasPaidPremiumMonthlyCycle,
+  isPremiumMonthlyPlan,
   verifyWebhookSignature,
 } from "@/lib/paypal.server";
 
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/payments/paypal-webhook")({
         const webhookId = process.env.PAYPAL_WEBHOOK_ID?.trim();
         if (!webhookId) {
           console.error("Missing PAYPAL_WEBHOOK_ID");
-          return new Response("Server not configured", { status: 500 });
+          return new Response("Webhook processing is temporarily unavailable.", { status: 500 });
         }
 
         let event: {
@@ -72,7 +72,8 @@ export const Route = createFileRoute("/api/payments/paypal-webhook")({
         if (!subscription) return new Response("OK (unknown subscription)");
 
         if (PAID_EVENTS.has(eventType)) {
-          const configuredPlan = process.env.PAYPAL_PLAN_ID?.trim() || process.env.VITE_PAYPAL_PLAN_ID?.trim();
+          const configuredPlan =
+            process.env.PAYPAL_PLAN_ID?.trim() || process.env.VITE_PAYPAL_PLAN_ID?.trim();
           if (!configuredPlan || subscription.paypal_plan_id !== configuredPlan) {
             console.error("Premium webhook plan does not match configured plan");
             return new Response("Subscription plan mismatch", { status: 400 });
@@ -87,18 +88,18 @@ export const Route = createFileRoute("/api/payments/paypal-webhook")({
               details.id !== subscriptionId ||
               details.plan_id !== configuredPlan ||
               details.plan_overridden === true ||
-              !isR50MonthlyPlan(plan)
+              !isPremiumMonthlyPlan(plan)
             ) {
-              console.error("Premium webhook did not match the configured R50 monthly plan");
+              console.error("Premium webhook did not match the configured USD 4 monthly plan");
               return new Response("Subscription plan mismatch", { status: 400 });
             }
 
             const paidSale =
               eventType === "PAYMENT.SALE.COMPLETED" &&
               resource.state === "completed" &&
-              resource.amount?.currency === "ZAR" &&
-              Number(resource.amount.value) === 50;
-            if (details.status !== "ACTIVE" || (!hasPaidR50MonthlyCycle(details) && !paidSale)) {
+              resource.amount?.currency === "USD" &&
+              Number(resource.amount.value) === 4;
+            if (details.status !== "ACTIVE" || (!hasPaidPremiumMonthlyCycle(details) && !paidSale)) {
               // An activation notice can precede the successful first charge.
               // Keep the row pending until PayPal confirms the amount was paid.
               return new Response("OK (payment pending)");

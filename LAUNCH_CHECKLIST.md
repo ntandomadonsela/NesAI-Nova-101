@@ -18,15 +18,21 @@ accounts and secrets.
 
 ## Step 1 — Database (Supabase) — ~10 minutes
 
-1. Go to **supabase.com** → sign in → **New project**.
-2. Once it's created, open **SQL Editor** (left sidebar).
-3. Open each file in `supabase/migrations/` in this repo, **in this exact order**, and
-   paste-and-run each one as its own query:
+1. Open the existing NesAI student Supabase project. Do not create a second project
+   unless the application is intentionally being split across projects.
+2. Open **SQL Editor**. Check migration history if it is tracked; otherwise verify each
+   migration's effects against the project schema before applying. Apply only missing
+   changes, once each, in filename order.
+3. The complete migration sequence in this repository is:
    1. `20260727221111_676896a3-7a69-4ce2-a140-b4d859d49ea8.sql` — creates `profiles`,
       user roles, and the trigger that sets up a new profile on sign-up
    2. `20260727221122_82a157fa-9297-4a2c-a7ac-3fec7f49ed05.sql` — small permissions fix
    3. `20260728120000_payments_and_content_upload.sql` — creates `resources` (the Vault),
       `subscriptions` (PayPal billing), and `document_chunks` (AI grounding)
+   4. `20261010090000_student_study_profiles.sql` — adds study and institution fields
+      to profiles and updates new-profile creation
+   5. `202610220001_secure_student_entitlements_and_ai_quota.sql` — protects premium
+      entitlements and adds server-controlled AI usage reservations and quotas
 4. Go to **Project Settings → API**. Copy these three values somewhere safe — you'll
    need them in Step 5:
    - **Project URL** → this is `SUPABASE_URL`
@@ -38,23 +44,17 @@ accounts and secrets.
 
 ---
 
-## Step 2 — AI tutor's brain — ~5 minutes — free option
+## Step 2 — AI provider — ~5 minutes
 
-**Groq** (recommended — genuinely free, no credit card, ever):
-1. Go to **console.groq.com** → sign up with email/Google/GitHub.
-2. **API Keys** → **Create API Key** → copy it. This is `AI_GATEWAY_API_KEY`.
-3. You also need two more variables (all three go in Vercel together, Step 5):
+Choose a provider supported by the application. Gemini works directly using
+`GEMINI_API_KEY`; OpenAI-compatible providers can use `AI_GATEWAY_API_KEY` with the
+endpoint and model settings below. Check model availability, usage limits and billing
+in the provider dashboard before launch:
    ```
+   AI_GATEWAY_API_KEY=                 ← provider key, if not using Gemini
    AI_GATEWAY_BASE_URL=https://api.groq.com/openai/v1
    AI_GATEWAY_MODEL=llama-3.3-70b-versatile
    ```
-   Free tier: 30 requests/minute, 14,400/day — plenty for launch. If you outgrow it,
-   adding a card later raises the limits without changing any code.
-
-*(Prefer OpenAI's GPT models instead? Skip Groq — go to platform.openai.com, create an
-API key, add billing credit, and just set `AI_GATEWAY_API_KEY`. Leave `AI_GATEWAY_BASE_URL`
-and `AI_GATEWAY_MODEL` unset and it defaults to OpenAI's `gpt-4o-mini`. This costs money
-per question, unlike Groq.)*
 
 ---
 
@@ -105,13 +105,14 @@ Vercel dashboard → your project → **Settings → Environment Variables** →
 value collected in Steps 1–3 to the **Preview** and **Production** environments:
 
 ```
-SUPABASE_URL=                     ← from Step 1
-SUPABASE_PUBLISHABLE_KEY=         ← from Step 1
+SUPABASE_URL=                     ← optional if VITE_SUPABASE_URL is present
+SUPABASE_PUBLISHABLE_KEY=         ← optional if VITE_SUPABASE_ANON_KEY is present
 SUPABASE_SERVICE_ROLE_KEY=        ← from Step 1
 VITE_SUPABASE_URL=                ← same value as SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY=    ← same value as SUPABASE_PUBLISHABLE_KEY
+VITE_SUPABASE_ANON_KEY=           ← Supabase anon/public key (or use VITE_SUPABASE_PUBLISHABLE_KEY)
 
-AI_GATEWAY_API_KEY=               ← from Step 2
+GEMINI_API_KEY=                   ← from Step 2, or use AI_GATEWAY_API_KEY for another provider
+AI_GATEWAY_API_KEY=               ← alternate provider key, when applicable
 AI_GATEWAY_BASE_URL=https://api.groq.com/openai/v1   ← if using Groq
 AI_GATEWAY_MODEL=llama-3.3-70b-versatile              ← if using Groq
 
@@ -121,25 +122,26 @@ PAYPAL_CLIENT_SECRET=             ← from Step 3
 PAYPAL_WEBHOOK_ID=                ← from Step 3
 VITE_PAYPAL_CLIENT_ID=            ← same value as PAYPAL_CLIENT_ID
 VITE_PAYPAL_PLAN_ID=              ← from Step 3
-LEADS_WEBHOOK_URL=                ← optional, private contact-form destination
+FORMSPREE_FORM_ID=                ← Formspree form endpoint ID (recommended)
+LEADS_WEBHOOK_URL=                ← optional alternative HTTPS CRM webhook
 ```
 
-Also add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` using the same values
-as the server Supabase variables above. Import the Git repository in Vercel and deploy a
-Preview first. Redeploy whenever you change environment values.
+The application accepts the existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+for user-scoped server requests, so do not duplicate the same values unless you prefer
+the standard server variable names. Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Import
+the Git repository in Vercel and deploy a Preview first. Redeploy whenever you change
+environment values.
 
 ---
 
 ## Step 6 — Connect your domain — ~5 minutes + up to 1 hour waiting
 
-1. Vercel → **Project → Settings → Domains → Add**.
-2. Enter your domain. Vercel tells you exactly what DNS record to add (either an
-   A record for a root domain like `nesainova.com`, or a CNAME for a subdomain like
-   `app.nesainova.com`).
-3. Go to wherever you bought the domain, add that exact record.
-4. Wait for DNS to propagate; Vercel provisions HTTPS after it verifies the records.
-5. In Supabase Auth → URL Configuration, set the production Site URL and allow the
-   production domain, the Vercel Preview URL pattern, and your local development URL.
+1. In Vercel → **Project → Settings → Domains**, confirm the existing `www.nesai.co.za`
+   domain is assigned to the production deployment.
+2. Check the root-domain redirect and TLS status in Vercel. Change DNS only if Vercel
+   reports that the current records are incorrect.
+3. In Supabase Auth → URL Configuration, confirm the production Site URL and allow the
+   production domain, the Vercel Preview URL pattern, and the local development URL.
 
 ---
 
@@ -171,6 +173,10 @@ Go through this list on the real, live site:
 - [ ] Go to **Upgrade** → subscribe using a PayPal **sandbox** buyer account → does your
       profile flip to Premium?
 - [ ] Cancel that sandbox subscription → does Premium turn back off?
+- [ ] Submit the enterprise enquiry form → confirm it arrives in Formspree or the configured CRM.
+- [ ] Confirm Vercel Firewall/rate limiting is configured for `POST /api/leads`.
+- [ ] Publish the approved privacy notice covering the data controller, CRM processor,
+      purpose, lawful basis, retention and privacy contact.
 - [ ] Once all of the above pass: switch `PAYPAL_ENV` to `live` in Vercel, swap in your
       live PayPal credentials, redeploy, and do **one real small test payment yourself**
       before announcing launch.

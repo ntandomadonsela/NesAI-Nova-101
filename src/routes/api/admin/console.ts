@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/admin/console")({
         } catch (error) {
           console.error("Admin console data request failed", error);
           return Response.json(
-            { error: "Could not load admin data. Check the server configuration and try again." },
+            { error: "Staff data is temporarily unavailable. Please try again later." },
             { status: 500 },
           );
         }
