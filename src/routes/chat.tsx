@@ -230,14 +230,16 @@ function ChatPage() {
         }
         return;
       }
-      if (res.status === 402) {
-        const body = await res.json().catch(() => ({}));
-        toast.error("AI tutoring is temporarily unavailable. Please try again later or contact support.");
-        setStreaming(false);
-        return;
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: unknown };
+        const message =
+          typeof body.error === "string"
+            ? body.error
+            : "The Study Desk is temporarily unavailable. Your credit was not used. Please try again later.";
+        throw new Error(`nesai-api:${message}`);
       }
-      if (!res.ok || !res.body) {
-        throw new Error("tutor_request_failed");
+      if (!res.body) {
+        throw new Error("The Study Desk returned an empty response. Your credit was not used.");
       }
 
       const reader = res.body.getReader();
@@ -266,7 +268,13 @@ function ChatPage() {
       }
       setMessages([...nextMessages, { role: "assistant", content: assistant }]);
     } catch (err: unknown) {
-      const message = userFacingError(err, "The AI tutor couldn’t answer just now. Please try again.");
+      const message =
+        err instanceof Error && err.message.startsWith("nesai-api:")
+          ? err.message.slice("nesai-api:".length)
+          : userFacingError(
+              err,
+              "The Study Desk couldn’t answer just now. Your credit was not used. Please try again.",
+            );
       toast.error(message);
       setInput(text);
       setMessages([
@@ -438,10 +446,10 @@ function ChatPage() {
               <Sparkles className="h-5 w-5 text-[var(--color-gold)]" />
             </div>
             <DialogTitle className="font-serif text-2xl">
-              You've reached today's free limit
+              You’ve used today’s 20 free AI credits
             </DialogTitle>
             <DialogDescription>
-              Free accounts get 5 AI questions per day. Upgrade to Nova Premium for unlimited
+              Free accounts get 20 AI credits each day. Upgrade to Nova Premium for unlimited
               tutoring, exam prediction and advanced analysis.
             </DialogDescription>
           </DialogHeader>
