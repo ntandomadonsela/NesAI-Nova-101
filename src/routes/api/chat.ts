@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/chat")({
         const providerConfig = resolveAiProviderConfig();
         if (!providerConfig) {
           console.error("Study Desk AI provider is not configured", {
-            expectedVariables: ["GEMINI_API_KEY", "OPENAI_API_KEY", "AI_GATEWAY_API_KEY"],
+            expectedVariables: ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "AI_GATEWAY_API_KEY"],
           });
           return Response.json(
             {
