@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { streamText, type ModelMessage } from "ai";
+import { generateText, Output, streamText, type ModelMessage } from "ai";
+import { z } from "zod";
 import { createAiGateway, resolveAiProviderConfig } from "@/lib/ai-gateway.server";
 import { createSubjectAgent, getAgent } from "@/lib/subject-agents";
 import { fetchVaultDocumentText, selectRelevantDocumentChunks } from "@/lib/documents.server";
@@ -28,6 +29,17 @@ Answer writing style:
 - Match the detail to the request. Avoid repetitive introductions, filler, huge unbroken paragraphs, unnecessary restatement, and generic follow-up offers unrelated to the student's question.
 - Define unfamiliar terms briefly. If the question is ambiguous, state the key assumption or ask one focused clarification. Be honest about uncertainty and never fabricate facts, legal citations, curriculum details, or sources.
 `;
+
+const practiceTestSchema = z.object({
+  title: z.string().min(3).max(140),
+  instructions: z.string().min(3).max(300),
+  questions: z.array(z.object({
+    question: z.string().min(8).max(1200),
+    options: z.array(z.string().min(1).max(500)).length(4),
+    correctIndex: z.number().int().min(0).max(3),
+    explanation: z.string().min(8).max(1600),
+  })).length(10),
+});
 
 function getProviderErrorMessage(error: unknown): string {
   const status =
@@ -118,6 +130,8 @@ export const Route = createFileRoute("/api/chat")({
           messages: Array<{ role: "user" | "assistant"; content: string }>;
           agentId?: string;
           subjectName?: string;
+          mode?: "chat" | "practice-test";
+          practiceTopic?: string;
           resourceContext?: { id?: string; title?: string; subject?: string; year?: string } | null;
         };
         let body: Body;
@@ -129,6 +143,10 @@ export const Route = createFileRoute("/api/chat")({
         if (
           !body ||
           typeof body !== "object" ||
+          (body.mode !== undefined && body.mode !== "chat" && body.mode !== "practice-test") ||
+          (body.practiceTopic !== undefined &&
+            (typeof body.practiceTopic !== "string" || body.practiceTopic.length > 500)) ||
+          (body.mode === "practice-test" && !body.practiceTopic?.trim()) ||
           !Array.isArray(body.messages) ||
           body.messages.length === 0 ||
           body.messages.length > 40 ||
@@ -326,6 +344,32 @@ export const Route = createFileRoute("/api/chat")({
 
         // 4. Call the configured AI gateway
         const gateway = createAiGateway(providerConfig.apiKey, providerConfig.baseURL);
+
+        if (body.mode === "practice-test") {
+          try {
+            const { output } = await generateText({
+              model: gateway(providerConfig.model),
+              output: Output.object({ schema: practiceTestSchema }),
+              maxOutputTokens: 6000,
+              system: `${system}\n\nYou are also an assessment writer. Create exactly 10 original multiple-choice questions for this student's level and subject. Use South African CAPS/DBE and NSC conventions for school subjects; never import another country's curriculum. Each question has exactly four distinct options and one clearly correct answer. Vary difficulty from recall to application, avoid trick wording and duplicates, and provide a short, clear explanation of the correct answer. Never invent legal authorities, facts, or curriculum requirements.`,
+              prompt: `Create a 10-question multiple-choice practice test on: ${body.practiceTopic}\n\nRecent study conversation:\n${body.messages.map((message) => `${message.role}: ${message.content}`).join("\n")}`,
+            });
+            if (!output) throw new Error("The model returned no structured test.");
+            await finishQuota(true);
+            return Response.json({ quiz: output });
+          } catch (error) {
+            console.error("Study Desk practice test generation failed", {
+              provider: providerConfig.provider,
+              model: providerConfig.model,
+              name: error instanceof Error ? error.name : "UnknownError",
+            });
+            await finishQuota(false);
+            return Response.json(
+              { error: "The tutor could not create this practice test. Your credit was not used; please try again." },
+              { status: 503 },
+            );
+          }
+        }
 
         let providerFailed = false;
         try {

@@ -6,6 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { userFacingError } from "@/lib/user-facing-error";
 import { createStudentAgents, getAgent, type SubjectAgent } from "@/lib/subject-agents";
 import { SiteNav } from "@/components/site-nav";
@@ -23,8 +24,11 @@ import { toast } from "sonner";
 import {
   Atom,
   BookOpen,
+  CheckCircle2,
+  Clock3,
   FileText,
   GraduationCap,
+  MessageSquarePlus,
   Scale,
   Send,
   Sigma,
@@ -55,8 +59,48 @@ export const Route = createFileRoute("/chat")({
   component: ChatPage,
 });
 
-type Message = { role: "user" | "assistant"; content: string };
+type PracticeQuestion = {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+type PracticeQuiz = {
+  title: string;
+  instructions: string;
+  questions: PracticeQuestion[];
+  answers: number[];
+  submitted: boolean;
+};
+type Message = { role: "user" | "assistant"; content: string; quiz?: PracticeQuiz };
+type ChatSummary = { id: string; title: string | null; subject_agent: string; updated_at: string };
 const STREAM_ERROR_MARKER = "\n[[NESAI_STREAM_ERROR]]";
+
+function recentTutorMessages(messages: Message[]) {
+  let remaining = 36_000;
+  const selected: Array<{ role: Message["role"]; content: string }> = [];
+  for (const message of messages.slice(-30).reverse()) {
+    const quizContext = message.quiz
+      ? `\n\n${message.quiz.questions
+          .map(
+            (question, index) =>
+              `${index + 1}. ${question.question}\n${question.options
+                .map((option, optionIndex) => `${String.fromCharCode(65 + optionIndex)}. ${option}`)
+                .join("\n")}\nCorrect answer: ${String.fromCharCode(65 + question.correctIndex)}. ${question.explanation}`,
+          )
+          .join("\n\n")}`
+      : "";
+    let content = `${message.content}${quizContext}`;
+    if (content.length > remaining) {
+      if (selected.length > 0) break;
+      content = content.slice(-remaining);
+    }
+    selected.push({ role: message.role, content });
+    remaining -= content.length;
+    if (remaining <= 0) break;
+  }
+  return selected.reverse();
+}
 
 const tutorIcons = { Sigma, Atom, Scale, TrendingUp, BookOpen, GraduationCap };
 
@@ -87,15 +131,110 @@ function ChatPage() {
   const [studentLevel, setStudentLevel] = useState("Grade 12");
   const [studentDegree, setStudentDegree] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [savedChats, setSavedChats] = useState<ChatSummary[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
   const [ready, setReady] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
   const [showLimit, setShowLimit] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const quizSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Keep a usable tutor available while profile subjects are loading or missing.
   const availableAgents = studentAgents.length ? studentAgents : [getAgent("general")];
+
+  const refreshChatHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      setHistoryLoading(false);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("chats")
+      .select("id, title, subject_agent, updated_at")
+      .eq("user_id", authData.user.id)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    if (error) {
+      console.error("Could not load Study Desk history", error);
+      toast.error("We couldn’t load your saved conversations.");
+    } else {
+      setSavedChats((data ?? []) as ChatSummary[]);
+    }
+    setHistoryLoading(false);
+  }, []);
+
+  const saveConversation = useCallback(
+    async (chatId: string | null, nextMessages: Message[], currentAgent: SubjectAgent) => {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Sign in to save your conversation.");
+      const firstPrompt = nextMessages.find((message) => message.role === "user")?.content ?? "";
+      const title = firstPrompt.trim().replace(/\s+/g, " ").slice(0, 72) || "Study conversation";
+      const payload = {
+        title,
+        subject_agent: currentAgent.id,
+        messages: nextMessages as unknown as Json,
+        updated_at: new Date().toISOString(),
+      };
+      const result = chatId
+        ? await supabase
+            .from("chats")
+            .update(payload)
+            .eq("id", chatId)
+            .select("id, title, subject_agent, updated_at")
+            .single()
+        : await supabase
+            .from("chats")
+            .insert({ ...payload, user_id: authData.user.id })
+            .select("id, title, subject_agent, updated_at")
+            .single();
+      if (result.error || !result.data) throw result.error ?? new Error("Conversation was not saved.");
+      const saved = result.data as ChatSummary;
+      setActiveChatId(saved.id);
+      setSavedChats((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
+      return saved.id;
+    },
+    [],
+  );
+
+  const openConversation = useCallback(
+    async (chatId: string) => {
+      const { data, error } = await supabase
+        .from("chats")
+        .select("id, title, subject_agent, updated_at, messages")
+        .eq("id", chatId)
+        .single();
+      if (error || !data) {
+        toast.error("We couldn’t open that conversation. Please try again.");
+        return;
+      }
+      const restored = Array.isArray(data.messages)
+        ? data.messages.filter(
+            (message): message is Message =>
+              typeof message === "object" &&
+              message !== null &&
+              "role" in message &&
+              (message.role === "user" || message.role === "assistant") &&
+              "content" in message &&
+              typeof message.content === "string",
+          )
+        : [];
+      setMessages(restored);
+      setActiveChatId(data.id);
+      setAgent(
+        availableAgents.find((item) => item.id === data.subject_agent) ?? getAgent(data.subject_agent),
+      );
+    },
+    [availableAgents],
+  );
+
+  useEffect(() => {
+    void refreshChatHistory();
+  }, [refreshChatHistory]);
 
   const refreshStudyProfile = useCallback(async () => {
     setProfileLoading(true);
@@ -189,8 +328,15 @@ function ChatPage() {
     setMessages(nextMessages);
     setInput("");
     setStreaming(true);
+    let persistedChatId = activeChatId;
 
     try {
+      try {
+        persistedChatId = await saveConversation(persistedChatId, nextMessages, agent);
+      } catch (error) {
+        console.error("Could not save Study Desk conversation", error);
+        toast.error("Your question is here, but this conversation couldn’t be saved.");
+      }
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       if (!token) {
@@ -205,7 +351,7 @@ function ChatPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          messages: nextMessages,
+          messages: recentTutorMessages(nextMessages),
           agentId: agent.id,
           ...(agent.id.startsWith("subject-")
             ? { subjectName: agent.name.replace(/ Tutor$/, "") }
@@ -269,6 +415,16 @@ function ChatPage() {
         throw new Error("The AI returned an empty answer. Please try again.");
       }
       setMessages([...nextMessages, { role: "assistant", content: assistant }]);
+      try {
+        persistedChatId = await saveConversation(
+          persistedChatId,
+          [...nextMessages, { role: "assistant", content: assistant }],
+          agent,
+        );
+      } catch (error) {
+        console.error("Could not save Study Desk answer", error);
+        toast.error("The answer is ready, but it couldn’t be saved to your history.");
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error && err.message.startsWith("nesai-api:")
@@ -285,6 +441,121 @@ function ChatPage() {
       ]);
     } finally {
       setStreaming(false);
+    }
+  }
+
+  async function createPracticeTest() {
+    const topic = input.trim() || [...messages].reverse().find((message) => message.role === "user")?.content;
+    if (!topic) {
+      toast.error("Type a topic in the message box, then choose Create practice test.");
+      return;
+    }
+    if (topic.length > 500) {
+      toast.error("Keep the practice-test topic under 500 characters.");
+      return;
+    }
+    if (creatingTest || streaming) return;
+    setCreatingTest(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        navigate({ to: "/auth", search: { redirect: "/chat" } });
+        return;
+      }
+      const recentMessages = messages
+        .filter((message) => !message.quiz)
+        .slice(-10)
+        .map(({ role, content }) => ({ role, content: content.slice(-2500) }));
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          mode: "practice-test",
+          practiceTopic: topic,
+          messages: recentMessages.length
+            ? recentMessages
+            : [{ role: "user", content: `Create a practice test on ${topic}` }],
+          subjectName: agent.id.startsWith("subject-") ? agent.name.replace(/ Tutor$/, "") : undefined,
+          agentId: agent.id,
+          resourceContext: search.title
+            ? {
+                id: search.resource,
+                title: search.title,
+                subject: search.subject,
+                year: search.year,
+              }
+            : null,
+        }),
+      });
+      if (response.status === 429) {
+        const body = await response.json().catch(() => ({}));
+        if (body?.reason === "daily_limit") setShowLimit(true);
+        else toast.error("The tutor is busy right now. Please try again shortly.");
+        return;
+      }
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        quiz?: Omit<PracticeQuiz, "answers" | "submitted">;
+      };
+      if (!response.ok || !body.quiz) {
+        throw new Error(body.error ?? "The practice test could not be created.");
+      }
+      const nextMessages: Message[] = [
+        ...messages,
+        { role: "user", content: `Create a multiple-choice practice test on: ${topic}` },
+        {
+          role: "assistant",
+          content: `### ${body.quiz.title}\n\n${body.quiz.instructions}`,
+          quiz: { ...body.quiz, answers: Array(body.quiz.questions.length).fill(-1), submitted: false },
+        },
+      ];
+      setMessages(nextMessages);
+      setInput("");
+      try {
+        await saveConversation(activeChatId, nextMessages, agent);
+      } catch (error) {
+        console.error("Could not save practice test", error);
+        toast.error("The test was created, but it couldn’t be saved to your history.");
+      }
+    } catch (error) {
+      toast.error(userFacingError(error, "The practice test could not be created. Please try again."));
+    } finally {
+      setCreatingTest(false);
+    }
+  }
+
+  function chooseQuizAnswer(messageIndex: number, questionIndex: number, answerIndex: number) {
+    const nextMessages = messages.map((message, index) => {
+      if (index !== messageIndex || !message.quiz || message.quiz.submitted) return message;
+      const answers = [...message.quiz.answers];
+      answers[questionIndex] = answerIndex;
+      return { ...message, quiz: { ...message.quiz, answers } };
+    });
+    setMessages(nextMessages);
+    if (activeChatId) {
+      if (quizSaveTimeout.current) clearTimeout(quizSaveTimeout.current);
+      const chatId = activeChatId;
+      quizSaveTimeout.current = setTimeout(() => {
+        void saveConversation(chatId, nextMessages, agent).catch((error) => {
+          console.error("Could not save practice test progress", error);
+        });
+      }, 600);
+    }
+  }
+
+  async function submitPracticeTest(messageIndex: number) {
+    const nextMessages = messages.map((message, index) =>
+      index === messageIndex && message.quiz
+        ? { ...message, quiz: { ...message.quiz, submitted: true } }
+        : message,
+    );
+    setMessages(nextMessages);
+    try {
+      await saveConversation(activeChatId, nextMessages, agent);
+    } catch (error) {
+      console.error("Could not save marked practice test", error);
+      toast.error("Your result is shown, but it couldn’t be saved to history.");
     }
   }
 
@@ -338,6 +609,7 @@ function ChatPage() {
                   onClick={() => {
                     setAgent(a);
                     setMessages([]);
+                    setActiveChatId(null);
                   }}
                   className={`flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition ${
                     active ? "bg-primary text-primary-foreground" : "hover:bg-accent"
@@ -362,6 +634,49 @@ function ChatPage() {
               <FileText className="mr-1.5 h-3.5 w-3.5" /> Browse the Vault
             </Link>
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => {
+              setActiveChatId(null);
+              setMessages([]);
+            }}
+          >
+            <MessageSquarePlus className="mr-1.5 h-3.5 w-3.5" /> New conversation
+          </Button>
+
+          <section className="mt-6 border-t border-border pt-4" aria-label="Saved conversations">
+            <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Clock3 className="h-3.5 w-3.5" /> Recent conversations
+            </h3>
+            <div className="max-h-72 space-y-1 overflow-y-auto">
+              {historyLoading ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">Loading history…</p>
+              ) : savedChats.length === 0 ? (
+                <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">
+                  Your conversations will appear here so you can return to them later.
+                </p>
+              ) : (
+                savedChats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    type="button"
+                    onClick={() => void openConversation(chat.id)}
+                    className={`w-full truncate rounded-md px-2.5 py-2 text-left text-xs transition hover:bg-accent ${
+                      activeChatId === chat.id ? "bg-accent font-medium text-foreground" : "text-muted-foreground"
+                    }`}
+                    aria-current={activeChatId === chat.id ? "page" : undefined}
+                    title={chat.title ?? "Study conversation"}
+                  >
+                    {chat.title ?? "Study conversation"}
+                  </button>
+                ))
+              )}
+            </div>
+          </section>
         </aside>
 
         {/* Chat canvas */}
@@ -406,7 +721,15 @@ function ChatPage() {
             ) : messages.length === 0 ? (
               <EmptyState agent={agent} onExample={(q) => setInput(q)} />
             ) : (
-              messages.map((m, i) => <MessageBubble key={i} m={m} />)
+              messages.map((m, i) => (
+                <MessageBubble
+                  key={i}
+                  m={m}
+                  messageIndex={i}
+                  onQuizAnswer={chooseQuizAnswer}
+                  onQuizSubmit={submitPracticeTest}
+                />
+              ))
             )}
             {streaming && messages[messages.length - 1]?.role === "user" && (
               <div className="text-sm italic text-muted-foreground">Thinking…</div>
@@ -418,6 +741,7 @@ function ChatPage() {
             <div className="paper-card study-composer flex items-end gap-2 p-2">
               <Textarea
                 value={input}
+                maxLength={5000}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Ask ${agent.name.replace(" Tutor", "")} anything…`}
                 className="min-h-[52px] resize-none border-0 shadow-none focus-visible:ring-0"
@@ -428,6 +752,17 @@ function ChatPage() {
                   }
                 }}
               />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 shrink-0 px-3 text-xs"
+                onClick={() => void createPracticeTest()}
+                disabled={creatingTest || streaming}
+                title="Creates a 10-question test from the text in the message box, or your latest topic."
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                {creatingTest ? "Creating…" : "Practice test"}
+              </Button>
               <Button
                 onClick={sendMessage}
                 disabled={!input.trim() || streaming}
@@ -536,12 +871,22 @@ function EmptyState({ agent, onExample }: { agent: SubjectAgent; onExample: (q: 
   );
 }
 
-function MessageBubble({ m }: { m: Message }) {
+function MessageBubble({
+  m,
+  messageIndex,
+  onQuizAnswer,
+  onQuizSubmit,
+}: {
+  m: Message;
+  messageIndex: number;
+  onQuizAnswer: (messageIndex: number, questionIndex: number, answerIndex: number) => void;
+  onQuizSubmit: (messageIndex: number) => void;
+}) {
   const isUser = m.role === "user";
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed ${
+        className={`${m.quiz ? "w-full max-w-full" : "max-w-[85%]"} rounded-lg px-4 py-3 text-sm leading-relaxed ${
           isUser
             ? "bg-primary text-primary-foreground"
             : "border border-border bg-background text-foreground shadow-editorial"
@@ -549,6 +894,20 @@ function MessageBubble({ m }: { m: Message }) {
       >
         {isUser ? (
           <div className="whitespace-pre-wrap">{m.content}</div>
+        ) : m.quiz ? (
+          <div className="space-y-4">
+            <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                {m.content}
+              </ReactMarkdown>
+            </div>
+            <PracticeTestCard
+              quiz={m.quiz}
+              messageIndex={messageIndex}
+              onAnswer={onQuizAnswer}
+              onSubmit={onQuizSubmit}
+            />
+          </div>
         ) : (
           <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-headings:mb-2 prose-headings:mt-5 first:prose-headings:mt-0 prose-p:text-foreground prose-p:my-2 prose-p:leading-7 prose-strong:text-foreground prose-code:text-foreground prose-code:before:hidden prose-code:after:hidden prose-ul:my-2 prose-ul:pl-5 prose-ol:my-2 prose-ol:pl-5 prose-li:my-1 prose-li:marker:text-primary prose-blockquote:border-primary prose-blockquote:text-muted-foreground prose-pre:overflow-x-auto prose-pre:rounded-md prose-pre:bg-muted prose-pre:p-3 prose-table:block prose-table:overflow-x-auto prose-th:border prose-th:border-border prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:border prose-td:border-border prose-td:px-2 prose-td:py-1">
             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -558,5 +917,89 @@ function MessageBubble({ m }: { m: Message }) {
         )}
       </div>
     </div>
+  );
+}
+
+function PracticeTestCard({
+  quiz,
+  messageIndex,
+  onAnswer,
+  onSubmit,
+}: {
+  quiz: PracticeQuiz;
+  messageIndex: number;
+  onAnswer: (messageIndex: number, questionIndex: number, answerIndex: number) => void;
+  onSubmit: (messageIndex: number) => void;
+}) {
+  const score = quiz.questions.reduce(
+    (total, question, index) => total + Number(quiz.answers[index] === question.correctIndex),
+    0,
+  );
+  const allAnswered = quiz.answers.length === quiz.questions.length && quiz.answers.every((answer) => answer >= 0);
+
+  return (
+    <section className="space-y-4 rounded-lg border border-border bg-background p-4" aria-label={quiz.title}>
+      {quiz.submitted && (
+        <div className="flex items-center justify-between rounded-md bg-primary/10 px-4 py-3">
+          <span className="font-semibold">Your score</span>
+          <span className="text-lg font-bold">{score} / {quiz.questions.length}</span>
+        </div>
+      )}
+      {quiz.questions.map((question, questionIndex) => (
+        <fieldset key={`${questionIndex}-${question.question}`} className="space-y-2 border-b border-border pb-4 last:border-0">
+          <legend className="mb-2 font-medium leading-relaxed">
+            <span className="mr-1 text-muted-foreground">{questionIndex + 1}.</span> {question.question}
+          </legend>
+          <div className="space-y-2">
+            {question.options.map((option, optionIndex) => {
+              const selected = quiz.answers[questionIndex] === optionIndex;
+              const isCorrect = question.correctIndex === optionIndex;
+              const resultStyle = quiz.submitted
+                ? isCorrect
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-950"
+                  : selected
+                    ? "border-destructive bg-destructive/5 text-foreground"
+                    : "border-border bg-background text-foreground"
+                : selected
+                  ? "border-primary bg-primary/5 text-foreground"
+                  : "border-border bg-background text-foreground hover:bg-accent";
+              return (
+                <button
+                  key={optionIndex}
+                  type="button"
+                  disabled={quiz.submitted}
+                  aria-pressed={selected}
+                  onClick={() => onAnswer(messageIndex, questionIndex, optionIndex)}
+                  className={`flex w-full items-start gap-2 rounded-md border px-3 py-2 text-left text-sm transition disabled:cursor-default ${resultStyle}`}
+                >
+                  <span className="font-semibold">{String.fromCharCode(65 + optionIndex)}.</span>
+                  <span>{option}</span>
+                </button>
+              );
+            })}
+          </div>
+          {quiz.submitted && (
+            <p className="rounded-md bg-accent/50 p-3 text-sm leading-relaxed">
+              <strong>{quiz.answers[questionIndex] === question.correctIndex ? "Correct." : `Correct answer: ${String.fromCharCode(65 + question.correctIndex)}.`}</strong>{" "}
+              {question.explanation}
+            </p>
+          )}
+        </fieldset>
+      ))}
+      {!quiz.submitted && (
+        <Button type="button" onClick={() => onSubmit(messageIndex)} disabled={!allAnswered}>
+          Submit answers
+        </Button>
+      )}
+      {quiz.submitted && (
+        <p className="text-sm text-muted-foreground">
+          {score === quiz.questions.length
+            ? "Excellent work — you got every question right."
+            : score >= quiz.questions.length * 0.7
+              ? "Good work. Review the explanations for the questions you missed."
+              : "Use the explanations to review these ideas, then try another test."}
+        </p>
+      )}
+    </section>
   );
 }
