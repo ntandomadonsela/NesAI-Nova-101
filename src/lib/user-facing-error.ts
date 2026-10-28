@@ -1,9 +1,16 @@
-/** Replace service and database diagnostics with clear messages for students. */
+/** Keep backend diagnostics out of student-facing messages. */
 export function userFacingError(error: unknown, fallback: string) {
   const candidate = error as { code?: string; status?: number; message?: string } | null;
   const message = candidate?.message?.toLowerCase() ?? "";
   if (message.includes("redirect") && (message.includes("allow") || message.includes("url"))) {
-    return "The account email link is blocked by the Supabase redirect settings. Please contact NesAI support.";
+    return "We couldn’t open that email link. Please request a new link and try again.";
+  }
+  if (
+    candidate?.code === "user_banned" ||
+    message.includes("user is banned") ||
+    message.includes("user has been banned")
+  ) {
+    return "We couldn’t sign you in. Please contact NesAI support for help with your account.";
   }
   if (
     candidate?.status === 429 ||

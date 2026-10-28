@@ -435,7 +435,7 @@ function ProfilePage() {
         </div>
 
         <div className="profile-security-note">
-          <ShieldCheck size={17} /> Your password is managed securely by Supabase and is never
+          <ShieldCheck size={17} /> Your password is managed securely and is never
           visible to NesAI.
         </div>
       </main>
