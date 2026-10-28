@@ -316,9 +316,10 @@ function ChatPage() {
   }, [search.title, search.subject, search.year, ready, messages.length]);
 
   // Auto-scroll
+  const lastMessageContent = messages[messages.length - 1]?.content;
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, streaming]);
+  }, [messages.length, lastMessageContent, streaming]);
 
   async function sendMessage() {
     const text = input.trim();
