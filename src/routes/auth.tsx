@@ -89,15 +89,20 @@ function AuthPage() {
   }, [requestedMode]);
 
   useEffect(() => {
-    if (callbackError || callbackErrorCode) {
-      const code = `${callbackError ?? ""} ${callbackErrorCode ?? ""}`.toLowerCase();
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const providerError = callbackError ?? hashParams.get("error");
+    const providerCode = callbackErrorCode ?? hashParams.get("error_code");
+    const providerDescription = callbackErrorDescription ?? hashParams.get("error_description");
+    if (providerError || providerCode) {
+      const code = `${providerError ?? ""} ${providerCode ?? ""} ${providerDescription ?? ""}`.toLowerCase();
       setAuthCallbackMessage(
         code.includes("expired") || code.includes("invalid") || code.includes("otp")
-          ? "This account link is invalid or has expired. Request a fresh link and try again."
+          ? "This email link has expired or was already used. Request a fresh link and try again."
           : "We couldn’t complete the account link. Check the redirect settings and try again.",
       );
+      if (requestedMode !== "recovery") setMode("signin");
     }
-  }, [callbackError, callbackErrorCode, callbackErrorDescription]);
+  }, [callbackError, callbackErrorCode, callbackErrorDescription, requestedMode]);
 
   useEffect(() => {
     if (requestedMode !== "recovery" || !supabaseConfigured) return;
@@ -116,10 +121,16 @@ function AuthPage() {
 
   useEffect(() => {
     if (!supabaseConfigured) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session && requestedMode !== "recovery")
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && requestedMode !== "recovery") {
+        void navigate({ to: getPostAuthRoute(redirect) });
+      }
+    });
+    void supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (sessionData.session && requestedMode !== "recovery")
         navigate({ to: getPostAuthRoute(redirect) });
     });
+    return () => data.subscription.unsubscribe();
   }, [navigate, redirect, supabaseConfigured, requestedMode]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -193,10 +204,18 @@ function AuthPage() {
       navigate({ to: getPostAuthRoute(redirect) });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "";
+      const fallback =
+        mode === "forgot"
+          ? "We couldn’t request a password reset. Please check the email address and try again."
+          : mode === "recovery"
+            ? "We couldn’t update your password. Request a fresh reset link and try again."
+            : mode === "signup"
+              ? "We couldn’t create your account. Please try again, or sign in if you already have an account."
+              : "We couldn’t sign you in. Check your email and password, or use Forgot password to reset your password.";
       toast.error(
         message === "Failed to fetch"
           ? "We couldn’t reach your account service. Please try again in a moment."
-          : userFacingError(err, "We couldn’t complete sign-in. Check your details and try again."),
+          : userFacingError(err, fallback),
       );
     } finally {
       setLoading(false);
