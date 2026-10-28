@@ -2,7 +2,17 @@
 export function userFacingError(error: unknown, fallback: string) {
   const candidate = error as { code?: string; status?: number; message?: string } | null;
   const message = candidate?.message?.toLowerCase() ?? "";
-  if (candidate?.status === 429 || message.includes("email rate limit") || message.includes("over_email_send_rate_limit") || message.includes("error sending") || message.includes("smtp") || message.includes("mailer")) {
+  if (message.includes("redirect") && (message.includes("allow") || message.includes("url"))) {
+    return "The account email link is blocked by the Supabase redirect settings. Please contact NesAI support.";
+  }
+  if (
+    candidate?.status === 429 ||
+    message.includes("email rate limit") ||
+    message.includes("over_email_send_rate_limit") ||
+    message.includes("error sending") ||
+    message.includes("smtp") ||
+    message.includes("mailer")
+  ) {
     return "We couldn’t send your email right now. Please wait a few minutes and try again. If it still doesn’t arrive, contact support.";
   }
   if (message.includes("email not confirmed") || message.includes("email_not_confirmed")) {

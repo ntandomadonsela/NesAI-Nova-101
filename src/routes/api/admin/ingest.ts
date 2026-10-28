@@ -1,36 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAdmin } from "@/lib/admin-auth.server";
-
-const CHUNK_SIZE = 1200; // characters, roughly a few paragraphs
-const CHUNK_OVERLAP = 150;
-
-function chunkText(text: string): string[] {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (!clean) return [];
-  const chunks: string[] = [];
-  let i = 0;
-  while (i < clean.length) {
-    chunks.push(clean.slice(i, i + CHUNK_SIZE));
-    i += CHUNK_SIZE - CHUNK_OVERLAP;
-  }
-  return chunks;
-}
-
-async function extractText(buffer: ArrayBuffer, fileUrl: string): Promise<string> {
-  const lower = fileUrl.toLowerCase();
-  if (lower.endsWith(".pdf")) {
-    const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(Buffer.from(buffer));
-    return result.text;
-  }
-  if (lower.endsWith(".docx")) {
-    const mammoth = await import("mammoth");
-    const result = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
-    return result.value;
-  }
-  // .txt, .md, or anything else — treat as plain text
-  return Buffer.from(buffer).toString("utf-8");
-}
+import { chunkDocumentText, fetchVaultDocumentText } from "@/lib/documents.server";
 
 export const Route = createFileRoute("/api/admin/ingest")({
   server: {
@@ -60,23 +30,28 @@ export const Route = createFileRoute("/api/admin/ingest")({
         }
         const fileUrl = resource.file_url;
 
+        const supabaseUrl =
+          process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim();
+        if (!supabaseUrl)
+          return Response.json({ error: "Document storage is not configured." }, { status: 503 });
+
         let text: string;
         try {
-          const fileRes = await fetch(fileUrl);
-          if (!fileRes.ok) throw new Error(`Could not fetch file: ${fileRes.status}`);
-          const buffer = await fileRes.arrayBuffer();
-          text = await extractText(buffer, fileUrl);
+          text = await fetchVaultDocumentText(fileUrl, supabaseUrl);
         } catch (err) {
           console.error("Text extraction failed", err);
-          return new Response("Could not extract text from file", { status: 422 });
+          return Response.json(
+            { error: err instanceof Error ? err.message : "Could not extract text from file." },
+            { status: 422 },
+          );
         }
 
-        const chunks = chunkText(text);
+        const chunks = chunkDocumentText(text);
         if (chunks.length === 0) {
-          return new Response(JSON.stringify({ ok: true, chunks: 0 }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return Response.json(
+            { error: "No searchable text was found. Use a searchable PDF, DOCX, TXT or MD file." },
+            { status: 422 },
+          );
         }
 
         // Replace any previous chunks for this resource (e.g. re-upload/reprocess).

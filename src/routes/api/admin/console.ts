@@ -55,6 +55,15 @@ export const Route = createFileRoute("/api/admin/console")({
             .order("updated_at", { ascending: false });
           if (subscriptionError) throw subscriptionError;
 
+          const { data: supportRows, error: supportError } = await supabaseAdmin
+            .from("student_support_requests")
+            .select(
+              "id, user_id, category, subject, message, status, admin_note, created_at, updated_at",
+            )
+            .order("created_at", { ascending: false })
+            .limit(500);
+          if (supportError) throw supportError;
+
           const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
           const userById = new Map(authUsers.map((user) => [user.id, user]));
           const subscriptionByUser = new Map<string, (typeof subscriptions)[number]>();
@@ -72,39 +81,76 @@ export const Route = createFileRoute("/api/admin/console")({
                 email: user.email ?? "",
                 fullName: profile?.full_name || String(user.user_metadata?.full_name ?? ""),
                 academicLevel: profile?.academic_level ?? "",
-                isPremium: Boolean(profile?.is_premium),
+                isPremium: (() => {
+                  const current = subscriptionByUser.get(user.id);
+                  return Boolean(
+                    current &&
+                    (current.status === "active" ||
+                      (current.status === "cancelled" &&
+                        current.current_period_end &&
+                        Date.parse(current.current_period_end) > Date.now())),
+                  );
+                })(),
                 createdAt: user.created_at,
                 emailConfirmedAt: user.email_confirmed_at ?? null,
               };
             })
             .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
-          const subscribers = profiles
-            .filter((profile) => profile.is_premium)
-            .map((profile) => {
-              const user = userById.get(profile.id);
-              const subscription = subscriptionByUser.get(profile.id);
+          const subscribers = [...subscriptionByUser.entries()]
+            .filter(
+              ([, subscription]) =>
+                subscription.status === "active" ||
+                (subscription.status === "cancelled" &&
+                  subscription.current_period_end &&
+                  Date.parse(subscription.current_period_end) > Date.now()),
+            )
+            .map(([userId, subscription]) => {
+              const user = userById.get(userId);
+              const profile = profileById.get(userId);
               return {
-                id: profile.id,
+                id: userId,
                 email: user?.email ?? "",
-                fullName: profile.full_name,
-                provider: subscription?.provider ?? "—",
-                status: subscription?.status ?? "active",
-                currentPeriodEnd: subscription?.current_period_end ?? null,
-                since: subscription?.updated_at ?? profile.created_at,
+                fullName: profile?.full_name ?? String(user?.user_metadata?.full_name ?? ""),
+                provider: subscription.provider,
+                status: subscription.status,
+                currentPeriodEnd: subscription.current_period_end,
+                since: subscription.updated_at,
               };
             })
             .sort((a, b) => Date.parse(b.since) - Date.parse(a.since));
+
+          const supportRequests = (supportRows ?? []).map((item) => {
+            const user = userById.get(item.user_id);
+            const profile = profileById.get(item.user_id);
+            return {
+              id: item.id,
+              email: user?.email ?? "",
+              fullName: profile?.full_name || String(user?.user_metadata?.full_name ?? "Student"),
+              category: item.category,
+              subject: item.subject,
+              message: item.message,
+              status: item.status,
+              adminNote: item.admin_note,
+              createdAt: item.created_at,
+              updatedAt: item.updated_at,
+            };
+          });
 
           return Response.json({
             summary: {
               signups: authUsers.length,
               subscribers: subscribers.length,
               documents: resources.length,
+              openComplaints: supportRequests.filter(
+                (item: { category: string; status: string }) =>
+                  item.category === "complaint" && item.status !== "resolved",
+              ).length,
             },
             signups: signups.slice(0, 100),
             subscribers,
             resources,
+            supportRequests,
           });
         } catch (error) {
           console.error("Admin console data request failed", error);

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireAdmin } from "@/lib/admin-auth.server";
 
 const BUCKET = "resource-files";
-const ALLOWED_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "md"]);
+const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "txt", "md"]);
 
 function extension(name: string) {
   return name.split(".").pop()?.toLowerCase() ?? "";
@@ -36,10 +36,17 @@ export const Route = createFileRoute("/api/admin/resources")({
 
         if (body.action === "create-upload") {
           const name = typeof body.name === "string" ? body.name.trim() : "";
+          const size = typeof body.size === "number" ? body.size : 0;
           if (!name || !ALLOWED_EXTENSIONS.has(extension(name))) {
             return Response.json(
-              { error: "Choose a PDF, DOC, DOCX, TXT or MD file." },
+              { error: "Choose a searchable PDF, DOCX, TXT or MD file." },
               { status: 400 },
+            );
+          }
+          if (!Number.isSafeInteger(size) || size < 1 || size > 25 * 1024 * 1024) {
+            return Response.json(
+              { error: "Documents must be smaller than 25 MB." },
+              { status: 413 },
             );
           }
           const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120);
@@ -79,7 +86,10 @@ export const Route = createFileRoute("/api/admin/resources")({
             !ALLOWED_EXTENSIONS.has(extension(fileName))
           ) {
             return Response.json(
-              { error: "Complete all document details and try again." },
+              {
+                error:
+                  "Complete all document details and choose a searchable PDF, DOCX, TXT or MD file.",
+              },
               { status: 400 },
             );
           }

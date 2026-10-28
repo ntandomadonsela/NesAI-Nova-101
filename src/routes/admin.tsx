@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   FileText,
   Loader2,
+  MessageSquareText,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -20,15 +21,13 @@ import { Button } from "@/components/ui/button";
 import { userFacingError } from "@/lib/user-facing-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
-    meta: [
-      { title: "NesAI Administration" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "NesAI Administration" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminDashboard,
 });
@@ -65,14 +64,28 @@ type Resource = {
   created_at: string;
 };
 
+type SupportRequest = {
+  id: string;
+  email: string;
+  fullName: string;
+  category: string;
+  subject: string;
+  message: string;
+  status: "open" | "in_progress" | "resolved";
+  adminNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type ConsoleData = {
-  summary: { signups: number; subscribers: number; documents: number };
+  summary: { signups: number; subscribers: number; documents: number; openComplaints: number };
   signups: Signup[];
   subscribers: Subscriber[];
   resources: Resource[];
+  supportRequests: SupportRequest[];
 };
 
-type AdminSection = "overview" | "signups" | "subscribers" | "vault";
+type AdminSection = "overview" | "signups" | "subscribers" | "support" | "vault";
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const { data, error } = await supabase.auth.getSession();
@@ -114,7 +127,6 @@ function AdminDashboard() {
   const [documentType, setDocumentType] = useState("past_paper");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [file, setFile] = useState<File | null>(null);
-  const [groundAi, setGroundAi] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -158,6 +170,17 @@ function AdminDashboard() {
           .includes(query),
     );
   }, [data?.resources, search]);
+  const filteredSupportRequests = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return (data?.supportRequests ?? []).filter(
+      (request) =>
+        !query ||
+        [request.email, request.fullName, request.category, request.subject, request.message]
+          .join(" ")
+          .toLowerCase()
+          .includes(query),
+    );
+  }, [data?.supportRequests, search]);
 
   async function uploadDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -165,12 +188,17 @@ function AdminDashboard() {
       toast.error("Add the document details and choose a file first.");
       return;
     }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Choose a document smaller than 25 MB.");
+      return;
+    }
 
     setBusy(true);
+    let createdResource: Resource | undefined;
     try {
       const signed = await adminFetch<{ path: string; token: string }>("/api/admin/resources", {
         method: "POST",
-        body: JSON.stringify({ action: "create-upload", name: file.name }),
+        body: JSON.stringify({ action: "create-upload", name: file.name, size: file.size }),
       });
       const { error: uploadError } = await supabase.storage
         .from("resource-files")
@@ -193,26 +221,32 @@ function AdminDashboard() {
           year,
         }),
       });
+      createdResource = created.resource;
 
-      if (groundAi) {
-        const { data: session } = await supabase.auth.getSession();
-        const ingestResponse = await fetch("/api/admin/ingest", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.session?.access_token ?? ""}`,
-          },
-          body: JSON.stringify({ resourceId: created.resource.id }),
-        });
-        if (!ingestResponse.ok) {
-          const body = await ingestResponse.json().catch(() => ({}));
-          toast.warning("The document was uploaded, but AI indexing did not finish. Please try again later.");
-        } else {
-          toast.success("Document uploaded and indexed for the AI tutor.");
+      const { data: session } = await supabase.auth.getSession();
+      const ingestResponse = await fetch("/api/admin/ingest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ resourceId: created.resource.id }),
+      });
+      if (!ingestResponse.ok) {
+        const body = await ingestResponse.json().catch(() => ({}));
+        try {
+          await adminFetch(`/api/admin/resources?id=${encodeURIComponent(created.resource.id)}`, {
+            method: "DELETE",
+          });
+          createdResource = undefined;
+        } catch (cleanupError) {
+          console.error("Could not remove a document that failed AI indexing", cleanupError);
         }
-      } else {
-        toast.success("Document uploaded to The Vault.");
+        throw new Error(
+          body?.error ?? "The paper could not be indexed, so it was not added to the Vault.",
+        );
       }
+      toast.success("Document uploaded and indexed for the AI tutor.");
 
       setTitle("");
       setSubject("");
@@ -223,7 +257,16 @@ function AdminDashboard() {
       await queryClient.invalidateQueries({ queryKey: ["resources"] });
     } catch (error) {
       console.error("Admin upload failed", error);
-      toast.error(userFacingError(error, "The upload couldn’t be completed. Please check the file and try again."));
+      toast.error(
+        createdResource
+          ? "The paper could not be indexed. Please remove it from the Vault and retry with a searchable document."
+          : error instanceof Error && error.message
+            ? error.message
+            : userFacingError(
+                error,
+                "The upload couldn’t be completed. Please check the file and try again.",
+              ),
+      );
     } finally {
       setBusy(false);
     }
@@ -249,6 +292,23 @@ function AdminDashboard() {
     }
   }
 
+  async function updateSupportRequest(
+    request: SupportRequest,
+    status: SupportRequest["status"],
+    adminNote: string,
+  ) {
+    try {
+      await adminFetch("/api/admin/support", {
+        method: "PATCH",
+        body: JSON.stringify({ id: request.id, status, adminNote }),
+      });
+      toast.success("Support request updated.");
+      await queryClient.invalidateQueries({ queryKey: ["admin-console"] });
+    } catch (error) {
+      toast.error(userFacingError(error, "The support request could not be updated."));
+    }
+  }
+
   if (isAdmin === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -262,6 +322,7 @@ function AdminDashboard() {
     { id: "overview", label: "Overview" },
     { id: "signups", label: "Sign-ups" },
     { id: "subscribers", label: "Subscribers" },
+    { id: "support", label: "Support & complaints" },
     { id: "vault", label: "Vault management" },
   ];
 
@@ -329,7 +390,7 @@ function AdminDashboard() {
           <>
             {section === "overview" && (
               <section className="mt-7">
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <MetricCard icon={Users} label="Total sign-ups" value={data.summary.signups} />
                   <MetricCard
                     icon={UserCheck}
@@ -340,6 +401,11 @@ function AdminDashboard() {
                     icon={FileText}
                     label="Vault documents"
                     value={data.summary.documents}
+                  />
+                  <MetricCard
+                    icon={MessageSquareText}
+                    label="Open complaints"
+                    value={data.summary.openComplaints}
                   />
                 </div>
                 <div className="mt-7 grid gap-6 lg:grid-cols-2">
@@ -369,6 +435,17 @@ function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">
                     {data.summary.documents} documents are currently listed in The Vault. Upload new
                     curriculum materials, index them for AI tutoring, or remove outdated files.
+                  </p>
+                </section>
+                <section className="paper-card mt-6 p-5 sm:p-6">
+                  <SectionHeading
+                    title="Student support"
+                    action="Review requests"
+                    onAction={() => setSection("support")}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {data.summary.openComplaints} complaints are awaiting resolution. Review
+                    billing, account and content requests in the support queue.
                   </p>
                 </section>
               </section>
@@ -409,6 +486,29 @@ function AdminDashboard() {
                   />
                 </div>
                 <SubscriberTable users={filteredSubscribers} />
+              </section>
+            )}
+
+            {section === "support" && (
+              <section className="paper-card mt-7 overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-5 sm:p-6">
+                  <div>
+                    <h2 className="font-serif text-2xl">Student support & complaints</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Review requests and send a reply that the student can see in their support
+                      page.
+                    </p>
+                  </div>
+                  <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search student or request"
+                  />
+                </div>
+                <SupportRequestList
+                  requests={filteredSupportRequests}
+                  onSave={updateSupportRequest}
+                />
               </section>
             )}
 
@@ -522,29 +622,23 @@ function AdminDashboard() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="admin-document-file">File (PDF, DOCX, TXT, MD)</Label>
+                      <Label htmlFor="admin-document-file">
+                        File (searchable PDF, DOCX, TXT, MD)
+                      </Label>
                       <Input
                         id="admin-document-file"
                         type="file"
-                        accept=".pdf,.doc,.docx,.txt,.md"
+                        accept=".pdf,.docx,.txt,.md"
                         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                         required
                       />
                     </div>
                   </div>
-                  <label className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={groundAi}
-                      onChange={(event) => setGroundAi(event.target.checked)}
-                      className="mt-1"
-                    />
-                    <span>
-                      <strong className="text-foreground">Index for AI tutoring</strong>
-                      <br />
-                      Extract the document text so the tutor can use it as reference.
-                    </span>
-                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    Every document is text-indexed before it appears in the Vault so the tutor can
+                    answer questions about it. Scanned PDFs without selectable text must be
+                    OCR-processed first.
+                  </p>
                   <Button type="submit" disabled={busy} className="w-full">
                     {busy ? (
                       <>
@@ -720,6 +814,85 @@ function SubscriberTable({ users, compact = false }: { users: Subscriber[]; comp
         </tbody>
       </table>
     </div>
+  );
+}
+
+function SupportRequestList({
+  requests,
+  onSave,
+}: {
+  requests: SupportRequest[];
+  onSave: (request: SupportRequest, status: SupportRequest["status"], note: string) => void;
+}) {
+  if (!requests.length) {
+    return (
+      <p className="p-8 text-center text-sm text-muted-foreground">
+        No support requests match your search.
+      </p>
+    );
+  }
+  return (
+    <div className="divide-y divide-border">
+      {requests.map((request) => (
+        <SupportRequestItem key={request.id} request={request} onSave={onSave} />
+      ))}
+    </div>
+  );
+}
+
+function SupportRequestItem({
+  request,
+  onSave,
+}: {
+  request: SupportRequest;
+  onSave: (request: SupportRequest, status: SupportRequest["status"], note: string) => void;
+}) {
+  const [status, setStatus] = useState<SupportRequest["status"]>(request.status);
+  const [note, setNote] = useState(request.adminNote);
+  return (
+    <article className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="capitalize">
+            {request.category.replaceAll("_", " ")}
+          </Badge>
+          <span className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</span>
+        </div>
+        <h3 className="mt-2 font-semibold">{request.subject}</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {request.fullName} · {request.email}
+        </p>
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{request.message}</p>
+      </div>
+      <div className="grid content-start gap-3">
+        <div className="grid gap-1.5">
+          <Label htmlFor={`request-status-${request.id}`}>Status</Label>
+          <select
+            id={`request-status-${request.id}`}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as SupportRequest["status"])}
+          >
+            <option value="open">Open</option>
+            <option value="in_progress">In progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`request-note-${request.id}`}>Reply to student</Label>
+          <Textarea
+            id={`request-note-${request.id}`}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            maxLength={5000}
+            rows={4}
+          />
+        </div>
+        <Button type="button" size="sm" onClick={() => onSave(request, status, note)}>
+          Save update
+        </Button>
+      </div>
+    </article>
   );
 }
 

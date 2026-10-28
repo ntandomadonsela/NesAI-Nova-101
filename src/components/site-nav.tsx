@@ -3,6 +3,7 @@ import {
   BookOpen,
   CreditCard,
   Home,
+  LifeBuoy,
   LogOut,
   Menu,
   MessageSquareText,
@@ -58,6 +59,11 @@ export function SiteNav() {
           <Link to="/vault" onClick={() => setOpen(false)}>
             <BookOpen size={16} /> Resource vault
           </Link>
+          {signedIn && (
+            <Link to="/support" onClick={() => setOpen(false)}>
+              <LifeBuoy size={16} /> Help & complaints
+            </Link>
+          )}
           <Link to="/upgrade" onClick={() => setOpen(false)}>
             <CreditCard size={16} /> Premium
           </Link>

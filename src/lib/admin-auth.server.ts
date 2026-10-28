@@ -36,6 +36,20 @@ export async function requireAdmin(request: Request) {
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: role, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError) {
+      console.error("Admin role lookup failed", roleError);
+      return Response.json(
+        { error: "Staff access is temporarily unavailable. Please try again later." },
+        { status: 503 },
+      );
+    }
+    if (!role) return new Response("Forbidden", { status: 403 });
     return { user: data.user, supabaseAdmin };
   } catch (error) {
     console.error("Admin service client is not configured", error);

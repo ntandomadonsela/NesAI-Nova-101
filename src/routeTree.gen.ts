@@ -17,17 +17,21 @@ import { Route as EnterpriseAiDataRouteImport } from './routes/enterprise-ai-dat
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as StudentsRouteImport } from './routes/students'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as AdminUploadRouteImport } from './routes/admin/upload'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLeadsRouteImport } from './routes/api/leads'
+import { Route as ApiSupportRouteImport } from './routes/api/support'
 import { Route as ApiAdminConsoleRouteImport } from './routes/api/admin/console'
 import { Route as ApiAdminIngestRouteImport } from './routes/api/admin/ingest'
 import { Route as ApiAdminResourcesRouteImport } from './routes/api/admin/resources'
+import { Route as ApiAdminSupportRouteImport } from './routes/api/admin/support'
 import { Route as ApiPaymentsPaypalCancelRouteImport } from './routes/api/payments/paypal-cancel'
 import { Route as ApiPaymentsPaypalSubscribeRouteImport } from './routes/api/payments/paypal-subscribe'
 import { Route as ApiPaymentsPaypalWebhookRouteImport } from './routes/api/payments/paypal-webhook'
+import { Route as ApiResourcesDownloadRouteImport } from './routes/api/resources/download'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -69,6 +73,11 @@ const StudentsRoute = StudentsRouteImport.update({
   path: '/students',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UpgradeRoute = UpgradeRouteImport.update({
   id: '/upgrade',
   path: '/upgrade',
@@ -94,6 +103,11 @@ const ApiLeadsRoute = ApiLeadsRouteImport.update({
   path: '/api/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSupportRoute = ApiSupportRouteImport.update({
+  id: '/api/support',
+  path: '/api/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminConsoleRoute = ApiAdminConsoleRouteImport.update({
   id: '/api/admin/console',
   path: '/api/admin/console',
@@ -107,6 +121,11 @@ const ApiAdminIngestRoute = ApiAdminIngestRouteImport.update({
 const ApiAdminResourcesRoute = ApiAdminResourcesRouteImport.update({
   id: '/api/admin/resources',
   path: '/api/admin/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminSupportRoute = ApiAdminSupportRouteImport.update({
+  id: '/api/admin/support',
+  path: '/api/admin/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentsPaypalCancelRoute = ApiPaymentsPaypalCancelRouteImport.update({
@@ -126,6 +145,11 @@ const ApiPaymentsPaypalWebhookRoute =
     path: '/api/payments/paypal-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiResourcesDownloadRoute = ApiResourcesDownloadRouteImport.update({
+  id: '/api/resources/download',
+  path: '/api/resources/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -136,17 +160,21 @@ export interface FileRoutesByFullPath {
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
+  '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/support': typeof ApiSupportRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/admin/support': typeof ApiAdminSupportRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
+  '/api/resources/download': typeof ApiResourcesDownloadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,17 +185,21 @@ export interface FileRoutesByTo {
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
+  '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/support': typeof ApiSupportRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/admin/support': typeof ApiAdminSupportRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
+  '/api/resources/download': typeof ApiResourcesDownloadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,17 +211,21 @@ export interface FileRoutesById {
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
   '/students': typeof StudentsRoute
+  '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
   '/vault': typeof VaultRoute
   '/admin/upload': typeof AdminUploadRoute
   '/api/chat': typeof ApiChatRoute
   '/api/leads': typeof ApiLeadsRoute
+  '/api/support': typeof ApiSupportRoute
   '/api/admin/console': typeof ApiAdminConsoleRoute
   '/api/admin/ingest': typeof ApiAdminIngestRoute
   '/api/admin/resources': typeof ApiAdminResourcesRoute
+  '/api/admin/support': typeof ApiAdminSupportRoute
   '/api/payments/paypal-cancel': typeof ApiPaymentsPaypalCancelRoute
   '/api/payments/paypal-subscribe': typeof ApiPaymentsPaypalSubscribeRoute
   '/api/payments/paypal-webhook': typeof ApiPaymentsPaypalWebhookRoute
+  '/api/resources/download': typeof ApiResourcesDownloadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -202,17 +238,21 @@ export interface FileRouteTypes {
     | '/marketplace'
     | '/profile'
     | '/students'
+    | '/support'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/support'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/admin/support'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
+    | '/api/resources/download'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -223,17 +263,21 @@ export interface FileRouteTypes {
     | '/marketplace'
     | '/profile'
     | '/students'
+    | '/support'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/support'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/admin/support'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
+    | '/api/resources/download'
   id:
     | '__root__'
     | '/'
@@ -244,17 +288,21 @@ export interface FileRouteTypes {
     | '/marketplace'
     | '/profile'
     | '/students'
+    | '/support'
     | '/upgrade'
     | '/vault'
     | '/admin/upload'
     | '/api/chat'
     | '/api/leads'
+    | '/api/support'
     | '/api/admin/console'
     | '/api/admin/ingest'
     | '/api/admin/resources'
+    | '/api/admin/support'
     | '/api/payments/paypal-cancel'
     | '/api/payments/paypal-subscribe'
     | '/api/payments/paypal-webhook'
+    | '/api/resources/download'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,16 +314,20 @@ export interface RootRouteChildren {
   MarketplaceRoute: typeof MarketplaceRoute
   ProfileRoute: typeof ProfileRoute
   StudentsRoute: typeof StudentsRoute
+  SupportRoute: typeof SupportRoute
   UpgradeRoute: typeof UpgradeRoute
   VaultRoute: typeof VaultRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiLeadsRoute: typeof ApiLeadsRoute
+  ApiSupportRoute: typeof ApiSupportRoute
   ApiAdminConsoleRoute: typeof ApiAdminConsoleRoute
   ApiAdminIngestRoute: typeof ApiAdminIngestRoute
   ApiAdminResourcesRoute: typeof ApiAdminResourcesRoute
+  ApiAdminSupportRoute: typeof ApiAdminSupportRoute
   ApiPaymentsPaypalCancelRoute: typeof ApiPaymentsPaypalCancelRoute
   ApiPaymentsPaypalSubscribeRoute: typeof ApiPaymentsPaypalSubscribeRoute
   ApiPaymentsPaypalWebhookRoute: typeof ApiPaymentsPaypalWebhookRoute
+  ApiResourcesDownloadRoute: typeof ApiResourcesDownloadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -336,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/upgrade': {
       id: '/upgrade'
       path: '/upgrade'
@@ -371,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/support': {
+      id: '/api/support'
+      path: '/api/support'
+      fullPath: '/api/support'
+      preLoaderRoute: typeof ApiSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/console': {
       id: '/api/admin/console'
       path: '/api/admin/console'
@@ -392,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/support': {
+      id: '/api/admin/support'
+      path: '/api/admin/support'
+      fullPath: '/api/admin/support'
+      preLoaderRoute: typeof ApiAdminSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/payments/paypal-cancel': {
       id: '/api/payments/paypal-cancel'
       path: '/api/payments/paypal-cancel'
@@ -411,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/api/payments/paypal-webhook'
       fullPath: '/api/payments/paypal-webhook'
       preLoaderRoute: typeof ApiPaymentsPaypalWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/resources/download': {
+      id: '/api/resources/download'
+      path: '/api/resources/download'
+      fullPath: '/api/resources/download'
+      preLoaderRoute: typeof ApiResourcesDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -435,16 +515,20 @@ const rootRouteChildren: RootRouteChildren = {
   MarketplaceRoute: MarketplaceRoute,
   ProfileRoute: ProfileRoute,
   StudentsRoute: StudentsRoute,
+  SupportRoute: SupportRoute,
   UpgradeRoute: UpgradeRoute,
   VaultRoute: VaultRoute,
   ApiChatRoute: ApiChatRoute,
   ApiLeadsRoute: ApiLeadsRoute,
+  ApiSupportRoute: ApiSupportRoute,
   ApiAdminConsoleRoute: ApiAdminConsoleRoute,
   ApiAdminIngestRoute: ApiAdminIngestRoute,
   ApiAdminResourcesRoute: ApiAdminResourcesRoute,
+  ApiAdminSupportRoute: ApiAdminSupportRoute,
   ApiPaymentsPaypalCancelRoute: ApiPaymentsPaypalCancelRoute,
   ApiPaymentsPaypalSubscribeRoute: ApiPaymentsPaypalSubscribeRoute,
   ApiPaymentsPaypalWebhookRoute: ApiPaymentsPaypalWebhookRoute,
+  ApiResourcesDownloadRoute: ApiResourcesDownloadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

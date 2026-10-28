@@ -194,6 +194,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      student_support_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: string;
+          subject: string;
+          message: string;
+          status: "open" | "in_progress" | "resolved";
+          admin_note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category: string;
+          subject: string;
+          message: string;
+          status?: "open" | "in_progress" | "resolved";
+          admin_note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          category?: string;
+          subject?: string;
+          message?: string;
+          status?: "open" | "in_progress" | "resolved";
+          admin_note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

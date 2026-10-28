@@ -19,10 +19,20 @@ import { userFacingError } from "@/lib/user-facing-error";
 const searchSchema = z.object({
   mode: z.enum(["signin", "signup", "forgot", "recovery"]).optional(),
   redirect: z.string().optional(),
+  error: z.string().optional(),
+  error_code: z.string().optional(),
+  error_description: z.string().optional(),
 });
 
-function getPostAuthRoute(redirect?: string): "/chat" | "/upgrade" {
-  return redirect === "/upgrade" ? "/upgrade" : "/chat";
+type PostAuthRoute = "/chat" | "/upgrade" | "/support" | "/profile" | "/admin";
+
+function getPostAuthRoute(redirect?: string): PostAuthRoute {
+  return redirect === "/upgrade" ||
+    redirect === "/support" ||
+    redirect === "/profile" ||
+    redirect === "/admin"
+    ? redirect
+    : "/chat";
 }
 
 export const Route = createFileRoute("/auth")({
@@ -39,7 +49,13 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { mode: requestedMode, redirect } = useSearch({ from: "/auth" });
+  const {
+    mode: requestedMode,
+    redirect,
+    error: callbackError,
+    error_code: callbackErrorCode,
+    error_description: callbackErrorDescription,
+  } = useSearch({ from: "/auth" });
   const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "recovery">(
     requestedMode ?? "signin",
   );
@@ -57,6 +73,8 @@ function AuthPage() {
   const [signupNotice, setSignupNotice] = useState("");
   const [pendingSignupEmail, setPendingSignupEmail] = useState("");
   const [resendingConfirmation, setResendingConfirmation] = useState(false);
+  const [recoveryReady, setRecoveryReady] = useState<boolean | null>(null);
+  const [authCallbackMessage, setAuthCallbackMessage] = useState("");
   const supabaseConfigured = Boolean(
     import.meta.env.VITE_SUPABASE_URL &&
     (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY),
@@ -69,6 +87,32 @@ function AuthPage() {
   useEffect(() => {
     if (requestedMode === "recovery") setMode("recovery");
   }, [requestedMode]);
+
+  useEffect(() => {
+    if (callbackError || callbackErrorCode) {
+      const code = `${callbackError ?? ""} ${callbackErrorCode ?? ""}`.toLowerCase();
+      setAuthCallbackMessage(
+        code.includes("expired") || code.includes("invalid") || code.includes("otp")
+          ? "This account link is invalid or has expired. Request a fresh link and try again."
+          : "We couldn’t complete the account link. Check the redirect settings and try again.",
+      );
+    }
+  }, [callbackError, callbackErrorCode, callbackErrorDescription]);
+
+  useEffect(() => {
+    if (requestedMode !== "recovery" || !supabaseConfigured) return;
+    let cancelled = false;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setRecoveryReady(Boolean(session));
+    });
+    void supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (!cancelled) setRecoveryReady(Boolean(sessionData.session));
+    });
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
+  }, [requestedMode, supabaseConfigured]);
 
   useEffect(() => {
     if (!supabaseConfigured) return;
@@ -89,7 +133,9 @@ function AuthPage() {
     try {
       if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: appUrl("/auth?mode=recovery"),
+          redirectTo: appUrl(
+            `/auth?mode=recovery&redirect=${encodeURIComponent(getPostAuthRoute(redirect))}`,
+          ),
         });
         if (error) throw error;
         setResetSent(true);
@@ -97,6 +143,10 @@ function AuthPage() {
         return;
       }
       if (mode === "recovery") {
+        if (!recoveryReady)
+          throw new Error(
+            "This password reset link is invalid or has expired. Request a fresh link.",
+          );
         if (password.length < 8) throw new Error("Choose a password with at least 8 characters.");
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
@@ -112,7 +162,9 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: appUrl("/auth?redirect=%2Fchat"),
+            emailRedirectTo: appUrl(
+              `/auth?redirect=${encodeURIComponent(getPostAuthRoute(redirect))}`,
+            ),
             data: {
               full_name: fullName,
               academic_level: academicLevel,
@@ -387,6 +439,33 @@ function AuthPage() {
                   </div>
                 </>
               )}
+              {authCallbackMessage && (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
+                  {authCallbackMessage}
+                </p>
+              )}
+              {mode === "recovery" && recoveryReady === false && (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
+                  This reset link is invalid or has expired. Request a new password reset link to
+                  continue.
+                  <button
+                    type="button"
+                    className="ml-1 underline"
+                    onClick={() => {
+                      setMode("forgot");
+                      setRecoveryReady(null);
+                    }}
+                  >
+                    Request a new link
+                  </button>
+                </p>
+              )}
 
               {mode !== "recovery" && (
                 <div>
@@ -420,7 +499,9 @@ function AuthPage() {
 
               <Button
                 type="submit"
-                disabled={loading || !supabaseConfigured}
+                disabled={
+                  loading || !supabaseConfigured || (mode === "recovery" && recoveryReady !== true)
+                }
                 className="auth-submit"
               >
                 {loading ? (

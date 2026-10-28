@@ -139,7 +139,9 @@ function ChatPage() {
     } catch (error) {
       setStudentAgents([]);
       setAgent(getAgent("general"));
-      setProfileError(userFacingError(error, "We couldn’t load your subjects. Please refresh and try again."));
+      setProfileError(
+        userFacingError(error, "We couldn’t load your subjects. Please refresh and try again."),
+      );
     } finally {
       setReady(true);
       setProfileLoading(false);
