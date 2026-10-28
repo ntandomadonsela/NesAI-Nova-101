@@ -17,6 +17,18 @@ South African context policy:
 - When a question depends on a recent South African policy, deadline, admission rule, or law and no current source is supplied, say you cannot verify the latest position and ask for an official source.
 `;
 
+const ANSWER_STYLE_POLICY = `
+
+Answer writing style:
+- Sound like a helpful, articulate tutor: answer directly in natural prose, then organize the explanation in the order a reader needs it.
+- For summaries, give a brief opening sentence followed by a small number of focused bullets with bold labels where useful (for example, **Facts**, **Legal issue**, **Judgment**, **Significance**). Keep each point concise and explain the connection between facts, reasoning, and outcome. Do not turn a narrative summary into a table.
+- For general explanations, use short paragraphs and clear headings only when the answer is long enough to need sections. Use bullets for distinct points and numbered lists for sequences or steps.
+- Use Markdown tables only when readers need to compare several items across shared categories. Keep column headings concise, align related information in the same column, and avoid wide tables or putting long prose into cells. On mobile, a table must remain horizontally scrollable.
+- For calculations and procedures, show steps in order and make the final result easy to find. Use a subject-specific structure such as IRAC or Given / Required / Formula / Substitution / Answer when the question calls for it, not by default.
+- Match the detail to the request. Avoid repetitive introductions, filler, huge unbroken paragraphs, unnecessary restatement, and generic follow-up offers unrelated to the student's question.
+- Define unfamiliar terms briefly. If the question is ambiguous, state the key assumption or ask one focused clarification. Be honest about uncertainty and never fabricate facts, legal citations, curriculum details, or sources.
+`;
+
 function getProviderErrorMessage(error: unknown): string {
   const status =
     typeof error === "object" && error !== null && "statusCode" in error
@@ -176,7 +188,7 @@ export const Route = createFileRoute("/api/chat")({
           ? createSubjectAgent(body.subjectName!, profile.academic_level ?? "Grade 12")
           : getAgent(body.agentId);
 
-        let system = `${agent.systemPrompt}\n\nStudent profile: academic level ${profile.academic_level ?? "not specified"}${profile.degree_name ? `; degree ${profile.degree_name}` : ""}${profile.institution ? `; institution ${profile.institution}` : ""}${profile.study_year ? `; study year ${profile.study_year}` : ""}. Their selected subjects/modules are ${(profile.subjects ?? []).join(", ") || "not set"}. Keep answers within the requested subject. ${SOUTH_AFRICAN_CONTEXT_POLICY}`;
+        let system = `${agent.systemPrompt}\n\nStudent profile: academic level ${profile.academic_level ?? "not specified"}${profile.degree_name ? `; degree ${profile.degree_name}` : ""}${profile.institution ? `; institution ${profile.institution}` : ""}${profile.study_year ? `; study year ${profile.study_year}` : ""}. Their selected subjects/modules are ${(profile.subjects ?? []).join(", ") || "not set"}. Keep answers within the requested subject. ${SOUTH_AFRICAN_CONTEXT_POLICY}${ANSWER_STYLE_POLICY}`;
         let openedResource: { id: string; title: string; file_url: string; subject_or_module: string; year: number } | null = null;
         if (body.resourceContext?.id) {
           const { data: resource, error: resourceError } = await supabase

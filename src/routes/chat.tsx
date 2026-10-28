@@ -550,7 +550,7 @@ function MessageBubble({ m }: { m: Message }) {
         {isUser ? (
           <div className="whitespace-pre-wrap">{m.content}</div>
         ) : (
-          <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-code:before:hidden prose-code:after:hidden">
+          <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-foreground prose-headings:mb-2 prose-headings:mt-5 first:prose-headings:mt-0 prose-p:text-foreground prose-p:my-2 prose-p:leading-7 prose-strong:text-foreground prose-code:text-foreground prose-code:before:hidden prose-code:after:hidden prose-ul:my-2 prose-ul:pl-5 prose-ol:my-2 prose-ol:pl-5 prose-li:my-1 prose-li:marker:text-primary prose-blockquote:border-primary prose-blockquote:text-muted-foreground prose-pre:overflow-x-auto prose-pre:rounded-md prose-pre:bg-muted prose-pre:p-3 prose-table:block prose-table:overflow-x-auto prose-th:border prose-th:border-border prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:border prose-td:border-border prose-td:px-2 prose-td:py-1">
             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
               {m.content || "…"}
             </ReactMarkdown>
