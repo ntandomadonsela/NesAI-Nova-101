@@ -41,6 +41,20 @@ const practiceTestSchema = z.object({
   })).length(10),
 });
 
+// Groq's strict JSON-schema implementation supports a smaller schema subset
+// than Zod's length/range constraints. Keep the provider schema structural,
+// then enforce the exact quiz requirements locally after generation.
+const practiceTestOutputSchema = z.object({
+  title: z.string(),
+  instructions: z.string(),
+  questions: z.array(z.object({
+    question: z.string(),
+    options: z.array(z.string()),
+    correctIndex: z.number().int(),
+    explanation: z.string(),
+  }).strict()),
+}).strict();
+
 function getProviderErrorMessage(error: unknown): string {
   const status =
     typeof error === "object" && error !== null && "statusCode" in error
@@ -343,20 +357,26 @@ export const Route = createFileRoute("/api/chat")({
         };
 
         // 4. Call the configured AI gateway
-        const gateway = createAiGateway(providerConfig.apiKey, providerConfig.baseURL);
+        const supportsGroqStructuredOutput =
+          providerConfig.provider === "groq" &&
+          ["openai/gpt-oss-20b", "openai/gpt-oss-120b"].includes(providerConfig.model);
+        const gateway = createAiGateway(providerConfig.apiKey, providerConfig.baseURL, {
+          supportsStructuredOutputs: supportsGroqStructuredOutput,
+        });
 
         if (body.mode === "practice-test") {
           try {
-            const { output } = await generateText({
+            const { output: generatedQuiz } = await generateText({
               model: gateway(providerConfig.model),
-              output: Output.object({ schema: practiceTestSchema }),
+              output: Output.object({ schema: practiceTestOutputSchema }),
               maxOutputTokens: 6000,
               system: `${system}\n\nYou are also an assessment writer. Create exactly 10 original multiple-choice questions for this student's level and subject. Use South African CAPS/DBE and NSC conventions for school subjects; never import another country's curriculum. Each question has exactly four distinct options and one clearly correct answer. Vary difficulty from recall to application, avoid trick wording and duplicates, and provide a short, clear explanation of the correct answer. Never invent legal authorities, facts, or curriculum requirements.`,
               prompt: `Create a 10-question multiple-choice practice test on: ${body.practiceTopic}\n\nRecent study conversation:\n${body.messages.map((message) => `${message.role}: ${message.content}`).join("\n")}`,
             });
-            if (!output) throw new Error("The model returned no structured test.");
+            if (!generatedQuiz) throw new Error("The model returned no structured test.");
+            const quiz = practiceTestSchema.parse(generatedQuiz);
             await finishQuota(true);
-            return Response.json({ quiz: output });
+            return Response.json({ quiz });
           } catch (error) {
             console.error("Study Desk practice test generation failed", {
               provider: providerConfig.provider,

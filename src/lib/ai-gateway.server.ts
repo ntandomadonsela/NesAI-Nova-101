@@ -58,10 +58,15 @@ export function resolveAiProviderConfig(
 }
 
 // Create a model client after resolveAiProviderConfig pairs credentials with the right endpoint.
-export function createAiGateway(apiKey: string, baseURL = OPENAI_BASE_URL) {
+export function createAiGateway(
+  apiKey: string,
+  baseURL = OPENAI_BASE_URL,
+  options: { supportsStructuredOutputs?: boolean } = {},
+) {
   return createOpenAICompatible({
     name: "ai-gateway",
     baseURL,
+    supportsStructuredOutputs: options.supportsStructuredOutputs ?? false,
     headers: {
       Authorization: `Bearer ${apiKey}`,
     },
