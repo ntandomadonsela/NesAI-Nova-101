@@ -738,13 +738,13 @@ function ChatPage() {
 
           {/* Composer */}
           <div className="mt-4">
-            <div className="paper-card study-composer flex items-end gap-2 p-2">
+            <div className="paper-card study-composer flex flex-col gap-2 p-2">
               <Textarea
                 value={input}
                 maxLength={5000}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Ask ${agent.name.replace(" Tutor", "")} anything…`}
-                className="min-h-[52px] resize-none border-0 shadow-none focus-visible:ring-0"
+                className="min-h-[52px] w-full resize-none border-0 shadow-none focus-visible:ring-0"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -752,25 +752,28 @@ function ChatPage() {
                   }
                 }}
               />
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 shrink-0 px-3 text-xs"
-                onClick={() => void createPracticeTest()}
-                disabled={creatingTest || streaming}
-                title="Creates a 10-question test from the text in the message box, or your latest topic."
-              >
-                <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                {creatingTest ? "Creating…" : "Practice test"}
-              </Button>
-              <Button
-                onClick={sendMessage}
-                disabled={!input.trim() || streaming}
-                size="icon"
-                className="h-10 w-10 shrink-0 bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="flex w-full items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="study-practice-test-button h-10 shrink-0 px-3 text-xs"
+                  onClick={() => void createPracticeTest()}
+                  disabled={creatingTest || streaming}
+                  title="Creates a 10-question test from the text in the message box, or your latest topic."
+                >
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  {creatingTest ? "Creating…" : "Practice test"}
+                </Button>
+                <Button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || streaming}
+                  size="icon"
+                  aria-label="Send message"
+                  className="study-send-button h-10 w-10 shrink-0 bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </main>

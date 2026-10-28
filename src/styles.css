@@ -2379,11 +2379,20 @@
   font-size: 16px;
   line-height: 1.6;
 }
-.study-composer button {
+.study-composer .study-send-button {
   width: 46px;
   height: 46px;
   border-radius: 11px;
   background: linear-gradient(130deg, #1286fb, #6031ed);
+}
+.study-composer .study-practice-test-button {
+  width: auto;
+  min-width: 132px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  color: #243456;
+  white-space: nowrap;
 }
 .study-composer button:hover {
   filter: brightness(1.08);
