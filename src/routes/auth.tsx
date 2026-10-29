@@ -190,9 +190,9 @@ function AuthPage() {
         if (!data.session) {
           setPendingSignupEmail(email);
           setSignupNotice(
-            `We requested a confirmation email for ${email}. Check your inbox and junk folder. Confirm your address before signing in.`,
+            "If this address still needs confirmation, check your inbox and junk folder for a link. If you already have an account, sign in below or use Forgot password.",
           );
-          toast.success("Your confirmation email was requested.");
+          toast.info("Check your inbox if this address needs confirmation.");
           return;
         }
         toast.success("Account created. You're in.");
