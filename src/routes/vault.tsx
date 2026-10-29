@@ -264,8 +264,8 @@ function Vault() {
                       </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-                      <Button variant="outline" size="sm" asChild className="flex-1">
+                    <div className="mt-auto flex flex-col gap-2 pt-6">
+                      <Button variant="outline" size="sm" asChild className="w-full">
                         <a
                           href={`/api/resources/download?id=${encodeURIComponent(r.id)}`}
                           download
@@ -276,7 +276,7 @@ function Vault() {
                       <Button
                         size="sm"
                         onClick={() => askAiAbout(r)}
-                        className="flex-1 bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
+                        className="w-full bg-[var(--color-gold)] text-[var(--color-gold-foreground)] hover:brightness-110"
                       >
                         <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Ask AI About This Paper
                       </Button>

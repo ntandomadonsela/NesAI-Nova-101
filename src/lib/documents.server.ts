@@ -41,6 +41,17 @@ export function chunkDocumentText(text: string): string[] {
 
 export function selectRelevantDocumentChunks(text: string, query: string, limit = 5): string[] {
   const chunks = chunkDocumentText(text);
+  const questionReference = query.match(/\b\d+(?:\.\d+){1,}\b/)?.[0];
+  if (questionReference) {
+    const referencePattern = new RegExp(
+      questionReference.split(".").join("\\s*\\.\\s*"),
+    );
+    const referenceIndex = chunks.findIndex((chunk) => referencePattern.test(chunk));
+    if (referenceIndex >= 0) {
+      const start = Math.max(0, referenceIndex - 1);
+      return chunks.slice(start, start + limit);
+    }
+  }
   const terms = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) ?? [])];
   return chunks
     .map((content, index) => ({
