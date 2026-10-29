@@ -173,9 +173,9 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: appUrl(
-              `/auth?redirect=${encodeURIComponent(getPostAuthRoute(redirect))}`,
-            ),
+            // Keep the confirmation target to the canonical allowlisted path.
+            // The app routes successful confirmations to the study desk by default.
+            emailRedirectTo: appUrl("/auth"),
             data: {
               full_name: fullName,
               academic_level: academicLevel,
@@ -230,7 +230,7 @@ function AuthPage() {
         type: "signup",
         email: pendingSignupEmail,
         options: {
-          emailRedirectTo: appUrl("/auth?redirect=%2Fchat"),
+          emailRedirectTo: appUrl("/auth"),
         },
       });
       if (error) throw error;
