@@ -1,9 +1,8 @@
-import { createRequire } from "node:module";
+import pdfjs from "pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js";
 
 const DOCUMENT_CHUNK_SIZE = 1200;
 const DOCUMENT_CHUNK_OVERLAP = 150;
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
-const require = createRequire(import.meta.url);
 
 type PdfTextItem = { str?: string; transform?: number[] };
 type PdfPage = {
@@ -64,13 +63,11 @@ export async function readDocumentText(buffer: ArrayBuffer, fileUrl: string): Pr
   }
   const extension = getDocumentExtension(fileUrl);
   if (extension === "pdf") {
-    // pdf-parse loads this PDF.js bundle through a template require. Serverless
-    // bundlers omit that dynamically required file, causing a missing-module
-    // error in production. Resolve the bundled PDF.js file explicitly so the
-    // deployment tracer includes it in the server function.
-    const pdfjs = require("pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js") as PdfJs;
-    pdfjs.disableWorker = true;
-    const document = await pdfjs.getDocument(new Uint8Array(buffer));
+    // Import PDF.js directly. pdf-parse's dynamic template require is omitted
+    // from serverless bundles, while this static dependency is included by Vite.
+    const pdfLibrary = pdfjs as PdfJs;
+    pdfLibrary.disableWorker = true;
+    const document = await pdfLibrary.getDocument(new Uint8Array(buffer));
     try {
       const pages: string[] = [];
       for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
