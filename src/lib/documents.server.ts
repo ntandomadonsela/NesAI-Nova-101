@@ -4,7 +4,7 @@ const DOCUMENT_CHUNK_SIZE = 1200;
 const DOCUMENT_CHUNK_OVERLAP = 150;
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
 
-type PdfTextItem = { str?: string; transform?: number[] };
+type PdfTextItem = { str?: string; transform?: number[]; width?: number; hasEOL?: boolean };
 type PdfPage = {
   getTextContent(options: {
     normalizeWhitespace: boolean;
@@ -88,11 +88,40 @@ export async function readDocumentText(buffer: ArrayBuffer, fileUrl: string): Pr
           disableCombineTextItems: false,
         });
         let previousY: number | undefined;
+        let previousX: number | undefined;
+        let previousWidth = 0;
+        let previousFontSize = 0;
+        let forceNewLine = false;
         let pageText = "";
         for (const item of content.items) {
           const y = item.transform?.[5];
-          pageText += previousY === undefined || previousY === y ? (item.str ?? "") : `\n${item.str ?? ""}`;
+          const x = item.transform?.[4];
+          const fontSize = Math.abs(item.transform?.[3] ?? item.transform?.[0] ?? 0);
+          const sameLine =
+            previousY !== undefined && y !== undefined && Math.abs(previousY - y) < 1.5;
+          const previousTextEndsWithSpace = /\s$/.test(pageText);
+          const currentTextStartsWithSpace = /^\s/.test(item.str ?? "");
+          const hasPositionedGap =
+            x !== undefined &&
+            previousX !== undefined &&
+            x - (previousX + previousWidth) > Math.max(1, previousFontSize * 0.12);
+          if (previousY !== undefined) {
+            if (forceNewLine || !sameLine) pageText += "\n";
+            else if (
+              pageText &&
+              !previousTextEndsWithSpace &&
+              !currentTextStartsWithSpace &&
+              (hasPositionedGap || x === undefined || previousX === undefined)
+            ) {
+              pageText += " ";
+            }
+          }
+          pageText += item.str ?? "";
           previousY = y;
+          previousX = x;
+          previousWidth = item.width ?? 0;
+          previousFontSize = fontSize;
+          forceNewLine = item.hasEOL ?? false;
         }
         pages.push(pageText);
       }

@@ -307,9 +307,9 @@ function ChatPage() {
       setMessages([
         {
           role: "assistant",
-          content: `📄 Loaded context: **${search.title}** — ${search.subject ?? ""}${
+          content: `📄 Selected paper: **${search.title}** — ${search.subject ?? ""}${
             search.year ? ` (${search.year})` : ""
-          }.\n\nAsk me anything about this paper — I'll help you work through it step by step.`,
+          }.\n\nI’ll read from this paper when answering. Ask me a question, or tell me which problem you’d like to work through.`,
         },
       ]);
     }
@@ -357,7 +357,7 @@ function ChatPage() {
           ...(agent.id.startsWith("subject-")
             ? { subjectName: agent.name.replace(/ Tutor$/, "") }
             : {}),
-          resourceContext: search.title
+          resourceContext: search.resource
             ? {
                 id: search.resource,
                 title: search.title,
@@ -479,7 +479,7 @@ function ChatPage() {
             : [{ role: "user", content: `Create a practice test on ${topic}` }],
           subjectName: agent.id.startsWith("subject-") ? agent.name.replace(/ Tutor$/, "") : undefined,
           agentId: agent.id,
-          resourceContext: search.title
+          resourceContext: search.resource
             ? {
                 id: search.resource,
                 title: search.title,
