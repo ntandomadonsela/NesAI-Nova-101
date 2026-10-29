@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
+  Download,
   FileText,
   Loader2,
   MessageSquareText,
@@ -925,13 +926,11 @@ function ResourceTable({
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="outline">{resource.document_type.replaceAll("_", " ")}</Badge>
               <a
-                href={resource.file_url}
-                target="_blank"
-                rel="noreferrer"
+                href={`/api/resources/download?id=${encodeURIComponent(resource.id)}`}
                 className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
               >
-                Open file
-                <ArrowUpRight className="h-3 w-3" />
+                Download file
+                <Download className="h-3 w-3" />
               </a>
             </div>
           </div>

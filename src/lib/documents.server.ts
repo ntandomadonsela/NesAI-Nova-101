@@ -1,6 +1,26 @@
+import { createRequire } from "node:module";
+
 const DOCUMENT_CHUNK_SIZE = 1200;
 const DOCUMENT_CHUNK_OVERLAP = 150;
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+const require = createRequire(import.meta.url);
+
+type PdfTextItem = { str?: string; transform?: number[] };
+type PdfPage = {
+  getTextContent(options: {
+    normalizeWhitespace: boolean;
+    disableCombineTextItems: boolean;
+  }): Promise<{ items: PdfTextItem[] }>;
+};
+type PdfDocument = {
+  numPages: number;
+  getPage(page: number): Promise<PdfPage>;
+  destroy(): Promise<void>;
+};
+type PdfJs = {
+  disableWorker: boolean;
+  getDocument(data: Uint8Array): Promise<PdfDocument> | PdfDocument;
+};
 
 export function getDocumentExtension(fileUrl: string): string {
   try {
@@ -44,9 +64,34 @@ export async function readDocumentText(buffer: ArrayBuffer, fileUrl: string): Pr
   }
   const extension = getDocumentExtension(fileUrl);
   if (extension === "pdf") {
-    const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(Buffer.from(buffer));
-    return result.text;
+    // pdf-parse loads this PDF.js bundle through a template require. Serverless
+    // bundlers omit that dynamically required file, causing a missing-module
+    // error in production. Resolve the bundled PDF.js file explicitly so the
+    // deployment tracer includes it in the server function.
+    const pdfjs = require("pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js") as PdfJs;
+    pdfjs.disableWorker = true;
+    const document = await pdfjs.getDocument(new Uint8Array(buffer));
+    try {
+      const pages: string[] = [];
+      for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+        const page = await document.getPage(pageNumber);
+        const content = await page.getTextContent({
+          normalizeWhitespace: false,
+          disableCombineTextItems: false,
+        });
+        let previousY: number | undefined;
+        let pageText = "";
+        for (const item of content.items) {
+          const y = item.transform?.[5];
+          pageText += previousY === undefined || previousY === y ? (item.str ?? "") : `\n${item.str ?? ""}`;
+          previousY = y;
+        }
+        pages.push(pageText);
+      }
+      return pages.join("\n\n");
+    } finally {
+      await document.destroy();
+    }
   }
   if (extension === "docx") {
     const mammoth = await import("mammoth");

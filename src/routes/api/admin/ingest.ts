@@ -40,8 +40,22 @@ export const Route = createFileRoute("/api/admin/ingest")({
           text = await fetchVaultDocumentText(fileUrl, supabaseUrl);
         } catch (err) {
           console.error("Text extraction failed", err);
+          const message = err instanceof Error ? err.message : "";
+          if (message.includes("Cannot find module") || message.includes("Require stack")) {
+            return Response.json(
+              { error: "The document reader is temporarily unavailable. Please try again shortly." },
+              { status: 500 },
+            );
+          }
           return Response.json(
-            { error: err instanceof Error ? err.message : "Could not extract text from file." },
+            {
+              error:
+                message.startsWith("This document is too large") ||
+                message.startsWith("Use a searchable") ||
+                message.startsWith("The Vault document")
+                  ? message
+                  : "This document could not be read. Upload a searchable PDF, DOCX, TXT or MD file.",
+            },
             { status: 422 },
           );
         }

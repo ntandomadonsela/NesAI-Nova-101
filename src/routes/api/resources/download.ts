@@ -96,8 +96,10 @@ export const Route = createFileRoute("/api/resources/download")({
         }
 
         const filename = safeFileName(path);
+        const extension = filename.match(/\.[^.]+$/)?.[0] ?? ".pdf";
+        const title = resource.title.trim() || "NesAI document";
         const displayName = safeFileName(
-          `${resource.title}${filename.match(/\.[^.]+$/)?.[0] ?? ".pdf"}`,
+          /\.[a-z0-9]{1,8}$/i.test(title) ? title : `${title}${extension}`,
         );
         return new Response(file, {
           headers: {

@@ -266,8 +266,11 @@ function Vault() {
 
                     <div className="mt-6 flex flex-col gap-2 sm:flex-row">
                       <Button variant="outline" size="sm" asChild className="flex-1">
-                        <a href={`/api/resources/download?id=${encodeURIComponent(r.id)}`}>
-                          <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
+                        <a
+                          href={`/api/resources/download?id=${encodeURIComponent(r.id)}`}
+                          download
+                        >
+                          <Download className="mr-1.5 h-3.5 w-3.5" /> Download document
                         </a>
                       </Button>
                       <Button
