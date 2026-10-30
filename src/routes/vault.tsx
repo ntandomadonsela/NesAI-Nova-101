@@ -17,7 +17,12 @@ export const Route = createFileRoute("/vault")({
         content:
           "Browse a curated library of past exam papers, official memos and study notes. Filter by grade, curriculum, subject and year.",
       },
+      { property: "og:site_name", content: "NesAI" },
+      { property: "og:title", content: "The Vault | Past Papers, Memos and Study Notes | NesAI" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.nesai.co.za/vault" },
     ],
+    links: [{ rel: "canonical", href: "https://www.nesai.co.za/vault" }],
   }),
   component: Vault,
 });

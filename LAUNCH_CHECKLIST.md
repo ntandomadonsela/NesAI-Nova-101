@@ -122,9 +122,10 @@ PAYPAL_CLIENT_SECRET=             ← from Step 3
 PAYPAL_WEBHOOK_ID=                ← from Step 3
 VITE_PAYPAL_CLIENT_ID=            ← same value as PAYPAL_CLIENT_ID
 VITE_PAYPAL_PLAN_ID=              ← from Step 3
-FORMSPREE_FORM_ID=                ← Formspree form endpoint ID (recommended)
-LEADS_WEBHOOK_URL=                ← optional alternative HTTPS CRM webhook
 ```
+
+The website enquiry form sends submissions to the configured Formspree endpoint in
+`src/routes/api/leads.ts`; no additional Formspree environment variable is required.
 
 The application accepts the existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
 for user-scoped server requests, so do not duplicate the same values unless you prefer

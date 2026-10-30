@@ -164,8 +164,11 @@ export function CorporateHome() {
             <a href="/marketplace">
               Marketplace <ArrowDownRight size={13} />
             </a>
+            <a href="/students" onClick={() => setMenuOpen(false)}>
+              Students
+            </a>
             <div className="corp-nav-ctas">
-              <a className="corp-portal-link" href="/auth?mode=signup">
+              <a className="corp-portal-link" href="/students">
                 <GraduationCap size={15} /> Student portal
               </a>
               <a
@@ -1034,6 +1037,7 @@ export function CorporateHome() {
               <a href="/marketplace">Marketplace</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor portal</a>
               <a href="/students">Students & academia</a>
+              <a href="/vault">The Vault</a>
               <a href="#contact">Enterprise contact</a>
             </div>
           </div>

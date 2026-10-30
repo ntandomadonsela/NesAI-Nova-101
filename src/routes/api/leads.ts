@@ -12,11 +12,12 @@ type LeadPayload = {
 
 const MAX_REQUEST_BYTES = 20 * 1024;
 const MAX_FIELD_LENGTH = 4_000;
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xrppaaqk";
 const asText = (value: unknown, limit = MAX_FIELD_LENGTH) =>
   typeof value === "string" ? value.trim().slice(0, limit) : "";
 const accepted = () => Response.json({ ok: true });
 
-/** Sends validated enterprise enquiries to Formspree or an HTTPS CRM webhook. */
+/** Sends validated enterprise enquiries to the site's configured Formspree inbox. */
 export const Route = createFileRoute("/api/leads")({
   server: {
     handlers: {
@@ -71,83 +72,24 @@ export const Route = createFileRoute("/api/leads")({
           );
         }
 
-        const formspreeFormId = process.env.FORMSPREE_FORM_ID?.trim();
-        const configuredWebhook = process.env.LEADS_WEBHOOK_URL?.trim();
-        if (!formspreeFormId && !configuredWebhook) {
-          return Response.json(
-            {
-              error:
-                "The enquiry service is not available right now. Please email hello@nesai.co.za.",
-            },
-            { status: 503 },
-          );
-        }
-
-        if (formspreeFormId && !/^[A-Za-z0-9]+$/.test(formspreeFormId)) {
-          console.error("Lead delivery is misconfigured: the Formspree form ID is invalid.");
-          return Response.json(
-            {
-              error:
-                "The enquiry service is not available right now. Please email hello@nesai.co.za.",
-            },
-            { status: 503 },
-          );
-        }
-
-        let webhookUrl: URL | undefined;
-        if (!formspreeFormId && configuredWebhook) {
-          try {
-            webhookUrl = new URL(configuredWebhook);
-          } catch {
-            console.error("Lead automation is misconfigured: the webhook URL is invalid.");
-            return Response.json(
-              {
-                error:
-                  "The enquiry service is not available right now. Please email hello@nesai.co.za.",
-              },
-              { status: 503 },
-            );
-          }
-          if (webhookUrl.protocol !== "https:") {
-            console.error("Lead automation is misconfigured: the webhook must use HTTPS.");
-            return Response.json(
-              {
-                error:
-                  "The enquiry service is not available right now. Please email hello@nesai.co.za.",
-              },
-              { status: 503 },
-            );
-          }
-        }
-
         try {
-          let response: Response;
-          if (formspreeFormId) {
-            const formData = new FormData();
-            formData.set("name", lead.name);
-            formData.set("email", lead.email);
-            formData.set("company", lead.company);
-            formData.set("dataset_size", lead.datasetSize);
-            formData.set("interest", lead.interest);
-            formData.set("message", lead.message);
-            formData.set("source", lead.source);
-            formData.set("received_at", lead.receivedAt);
-            formData.set("_replyto", lead.email);
-            formData.set("_subject", `NesAI enterprise enquiry: ${lead.company}`);
-            response = await fetch(`https://formspree.io/f/${formspreeFormId}`, {
-              method: "POST",
-              headers: { Accept: "application/json" },
-              body: formData,
-              signal: AbortSignal.timeout(8_000),
-            });
-          } else {
-            response = await fetch(webhookUrl!, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(lead),
-              signal: AbortSignal.timeout(8_000),
-            });
-          }
+          const formData = new FormData();
+          formData.set("name", lead.name);
+          formData.set("email", lead.email);
+          formData.set("company", lead.company);
+          formData.set("dataset_size", lead.datasetSize);
+          formData.set("interest", lead.interest);
+          formData.set("message", lead.message);
+          formData.set("source", lead.source);
+          formData.set("received_at", lead.receivedAt);
+          formData.set("_replyto", lead.email);
+          formData.set("_subject", `NesAI enterprise enquiry: ${lead.company}`);
+          const response = await fetch(FORMSPREE_ENDPOINT, {
+            method: "POST",
+            headers: { Accept: "application/json" },
+            body: formData,
+            signal: AbortSignal.timeout(8_000),
+          });
           if (!response.ok) {
             console.error(`Lead automation delivery returned HTTP ${response.status}.`);
             return Response.json(
@@ -166,7 +108,7 @@ export const Route = createFileRoute("/api/leads")({
           );
         }
 
-        return Response.json({ ok: true, delivery: formspreeFormId ? "formspree" : "automation" });
+        return Response.json({ ok: true, delivery: "formspree" });
       },
     },
   },

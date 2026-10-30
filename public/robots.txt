@@ -2,9 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api
-Disallow: /auth
-Disallow: /chat
-Disallow: /profile
-Disallow: /upgrade
 
 Sitemap: https://www.nesai.co.za/sitemap.xml

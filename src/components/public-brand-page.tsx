@@ -29,6 +29,7 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
             <a href="/enterprise-ai-data">Enterprise services</a>
             <a href="/marketplace">Marketplace</a>
             <a href="/students">Students</a>
+            <a href="/vault">The Vault</a>
             <a className="corp-button corp-button-small" href="/#contact">
               Contact NesAI <ArrowRight size={14} />
             </a>
@@ -98,6 +99,7 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
               <a href="/enterprise-ai-data">Enterprise AI data</a>
               <a href="/marketplace">NesAI Marketplace</a>
               <a href="/students">NesAI for students</a>
+              <a href="/vault">The Vault</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor sign-in</a>
               <a href="/#contact">Contact NesAI</a>
             </div>
