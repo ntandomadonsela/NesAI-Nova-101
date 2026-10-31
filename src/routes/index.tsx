@@ -26,6 +26,7 @@ export const Route = createFileRoute("/")({
               "@type": "Organization",
               "@id": "https://www.nesai.co.za/#organization",
               name: "NesAI",
+              alternateName: "NesAI Nova",
               url: "https://www.nesai.co.za/",
               description: "NesAI is the education technology and AI data operations brand of Nesma Holdings.",
               logo: {
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/")({
               "@type": "WebSite",
               "@id": "https://www.nesai.co.za/#website",
               name: "NesAI",
+              alternateName: "NesAI Nova",
               url: "https://www.nesai.co.za/",
               description: "AI study support for South African students and human-led AI data services for enterprise teams.",
               publisher: { "@id": "https://www.nesai.co.za/#organization" },

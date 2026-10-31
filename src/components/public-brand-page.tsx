@@ -43,13 +43,12 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
             className={menuOpen ? "corp-public-links open" : "corp-public-links"}
             aria-label="NesAI sections"
           >
-            <a href="/about" onClick={() => setMenuOpen(false)}>About NesAI</a>
+            <a href="/about" onClick={() => setMenuOpen(false)}>About Us</a>
             <a href="/students" onClick={() => setMenuOpen(false)}>Academic Copilot</a>
             <a href="/resources" onClick={() => setMenuOpen(false)}>Student Resources</a>
             <a href="/marketplace" onClick={() => setMenuOpen(false)}>AI Data Marketplace</a>
-            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>Enterprise services</a>
             <a className="corp-button corp-button-small" href="/contact" onClick={() => setMenuOpen(false)}>
-              Contact NesAI <ArrowRight size={14} />
+              Contact Us <ArrowRight size={14} />
             </a>
           </nav>
         </div>
@@ -114,13 +113,13 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
             </a>
             <p>Human intelligence for better AI.</p>
             <div className="corp-footer-links">
-              <a href="/enterprise-ai-data">Enterprise AI data</a>
-              <a href="/marketplace">NesAI AI Data Marketplace</a>
-              <a href="/students">NesAI Academic Copilot</a>
-              <a href="/resources">Student resources</a>
+              <a href="/enterprise-ai-data">Enterprise AI data services</a>
+              <a href="/marketplace">AI Data Marketplace</a>
+              <a href="/students">Academic Copilot</a>
+              <a href="/resources">Student Resources</a>
               <a href="/vault">The Vault</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor sign-in</a>
-              <a href="/contact">Contact NesAI</a>
+              <a href="/contact">Contact Us</a>
             </div>
           </div>
           <div className="corp-footer-bottom">

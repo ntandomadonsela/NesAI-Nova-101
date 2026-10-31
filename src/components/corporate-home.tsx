@@ -151,15 +151,18 @@ export function CorporateHome() {
           >
             {menuOpen ? <X /> : <Menu />}
           </button>
-          <nav id="primary-navigation" className={menuOpen ? "corp-links open" : "corp-links"}>
-            <a href="/about" onClick={() => setMenuOpen(false)}>About NesAI</a>
+          <nav
+            id="primary-navigation"
+            className={menuOpen ? "corp-links open" : "corp-links"}
+            aria-label="Primary navigation"
+          >
+            <a href="/about" onClick={() => setMenuOpen(false)}>About Us</a>
             <a href="/students" onClick={() => setMenuOpen(false)}>Academic Copilot</a>
             <a href="/resources" onClick={() => setMenuOpen(false)}>Student Resources</a>
             <a href="/marketplace" onClick={() => setMenuOpen(false)}>AI Data Marketplace</a>
-            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>Enterprise services</a>
             <div className="corp-nav-ctas">
               <a className="corp-button corp-button-small" href="/contact">
-                Contact NesAI <ArrowRight size={14} />
+                Contact Us <ArrowRight size={14} />
               </a>
             </div>
           </nav>
@@ -175,7 +178,7 @@ export function CorporateHome() {
                 <span /> EDUCATION &amp; AI DATA OPERATIONS
               </div>
               <h1>
-                AI support for study.
+                NesAI supports study.
                 <br />
                 <em>Human-led data for AI.</em>
               </h1>
@@ -1014,14 +1017,14 @@ export function CorporateHome() {
             </a>
             <p>Human intelligence for better AI.</p>
             <div className="corp-footer-links">
-              <a href="/enterprise-ai-data">Enterprise AI data</a>
+              <a href="/enterprise-ai-data">Enterprise AI data services</a>
               <a href="/marketplace">AI Data Marketplace</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor portal</a>
               <a href="/students">Academic Copilot</a>
               <a href="/resources">Student Resources</a>
-              <a href="/about">About NesAI</a>
+              <a href="/about">About Us</a>
               <a href="/vault">The Vault</a>
-              <a href="/contact">Contact NesAI</a>
+              <a href="/contact">Contact Us</a>
             </div>
           </div>
           <div className="corp-footer-bottom">
