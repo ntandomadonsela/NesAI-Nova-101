@@ -3419,3 +3419,70 @@
     font-size: 11px;
   }
 }
+
+.corp-public-mobile-toggle {
+  display: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #dce4f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #14213d;
+  cursor: pointer;
+}
+
+.corp-public-mobile-toggle:focus-visible {
+  outline: 3px solid #533ee8;
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .corp-public-page .corp-nav {
+    position: relative;
+    min-height: 74px;
+  }
+
+  .corp-public-mobile-toggle {
+    display: grid;
+  }
+
+  .corp-public-links {
+    position: absolute;
+    z-index: 31;
+    top: calc(100% - 1px);
+    right: 0;
+    left: 0;
+    display: none;
+    width: 100%;
+    max-width: none;
+    align-items: stretch;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 8px 16px 16px;
+    border: 1px solid #e5eaf3;
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    background: #fff;
+    box-shadow: 0 18px 30px #15265714;
+  }
+
+  .corp-public-links.open {
+    display: flex;
+  }
+
+  .corp-public-links > a:not(.corp-button) {
+    min-height: 44px;
+    padding: 12px 4px;
+  }
+
+  .corp-public-links .corp-button {
+    align-self: flex-start;
+    min-height: 42px;
+    margin-top: 8px;
+    padding: 0 13px;
+    font-size: 12px;
+  }
+}

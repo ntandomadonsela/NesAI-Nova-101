@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Menu, X } from "lucide-react";
 
 export type PublicBrandPageContent = {
   eyebrow: string;
@@ -15,6 +16,8 @@ export type PublicBrandPageContent = {
 };
 
 export function PublicBrandPage({ content }: { content: PublicBrandPageContent }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="corporate-home corp-public-page">
       <a className="corp-skip-link" href="#main-content">
@@ -25,13 +28,27 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
           <a className="corp-brand" href="/" aria-label="NesAI home">
             <img src="/nesai-brand.png" alt="NesAI — Intelligence, Deployed at Scale" />
           </a>
-          <nav className="corp-public-links" aria-label="NesAI sections">
-            <a href="/about">About NesAI</a>
-            <a href="/students">Academic Copilot</a>
-            <a href="/resources">Student Resources</a>
-            <a href="/marketplace">AI Data Marketplace</a>
-            <a href="/enterprise-ai-data">Enterprise services</a>
-            <a className="corp-button corp-button-small" href="/contact">
+          <button
+            type="button"
+            className="corp-public-mobile-toggle"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={menuOpen}
+            aria-controls="public-navigation"
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <nav
+            id="public-navigation"
+            className={menuOpen ? "corp-public-links open" : "corp-public-links"}
+            aria-label="NesAI sections"
+          >
+            <a href="/about" onClick={() => setMenuOpen(false)}>About NesAI</a>
+            <a href="/students" onClick={() => setMenuOpen(false)}>Academic Copilot</a>
+            <a href="/resources" onClick={() => setMenuOpen(false)}>Student Resources</a>
+            <a href="/marketplace" onClick={() => setMenuOpen(false)}>AI Data Marketplace</a>
+            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>Enterprise services</a>
+            <a className="corp-button corp-button-small" href="/contact" onClick={() => setMenuOpen(false)}>
               Contact NesAI <ArrowRight size={14} />
             </a>
           </nav>
