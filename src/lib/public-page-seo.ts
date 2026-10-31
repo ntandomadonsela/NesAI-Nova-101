@@ -11,5 +11,21 @@ export function publicPageHead(title: string, description: string, path: string)
       { property: "og:url", content: url },
     ],
     links: [{ rel: "canonical", href: url }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "@id": `${url}#webpage`,
+          url,
+          name: title,
+          description,
+          isPartOf: { "@id": "https://www.nesai.co.za/#website" },
+          about: { "@id": "https://www.nesai.co.za/#organization" },
+          inLanguage: "en-ZA",
+        }),
+      },
+    ],
   };
 }

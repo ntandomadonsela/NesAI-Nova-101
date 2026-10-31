@@ -3,10 +3,10 @@ import { PublicBrandPage } from "@/components/public-brand-page";
 import { publicPageHead } from "@/lib/public-page-seo";
 
 const description =
-  "NesAI gives South African students AI study support, specialist subject tutors and a library of past papers, memos and notes.";
+  "Study with NesAI’s AI copilot, specialist subject support, and South African past papers, memos, and study notes.";
 
 export const Route = createFileRoute("/students")({
-  head: () => publicPageHead("NesAI for Students | AI Study Support", description, "/students"),
+  head: () => publicPageHead("NesAI Student | AI Study Copilot and Past Papers", description, "/students"),
   component: StudentsPage,
 });
 
@@ -15,7 +15,7 @@ function StudentsPage() {
     <PublicBrandPage
       content={{
         eyebrow: "NESAI FOR STUDENTS",
-        title: "Study with support built around you.",
+        title: "Your AI study copilot for South African learning.",
         introduction:
           "NesAI Student brings AI-powered study support and learning resources together for South African learners and students.",
         callToAction: { label: "Create a student account", href: "/auth?mode=signup" },

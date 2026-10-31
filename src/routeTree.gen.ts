@@ -10,12 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EnterpriseAiDataRouteImport } from './routes/enterprise-ai-data'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as StudentsRouteImport } from './routes/students'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
@@ -38,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -53,6 +61,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EnterpriseAiDataRoute = EnterpriseAiDataRouteImport.update({
   id: '/enterprise-ai-data',
   path: '/enterprise-ai-data',
@@ -66,6 +79,11 @@ const MarketplaceRoute = MarketplaceRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentsRoute = StudentsRouteImport.update({
@@ -153,12 +171,15 @@ const ApiResourcesDownloadRoute = ApiResourcesDownloadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/contact': typeof ContactRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRoute
   '/students': typeof StudentsRoute
   '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
@@ -178,12 +199,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/contact': typeof ContactRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRoute
   '/students': typeof StudentsRoute
   '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
@@ -204,12 +228,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/contact': typeof ContactRoute
   '/enterprise-ai-data': typeof EnterpriseAiDataRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRoute
   '/students': typeof StudentsRoute
   '/support': typeof SupportRoute
   '/upgrade': typeof UpgradeRoute
@@ -231,12 +258,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/contact'
     | '/enterprise-ai-data'
     | '/marketplace'
     | '/profile'
+    | '/resources'
     | '/students'
     | '/support'
     | '/upgrade'
@@ -256,12 +286,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/contact'
     | '/enterprise-ai-data'
     | '/marketplace'
     | '/profile'
+    | '/resources'
     | '/students'
     | '/support'
     | '/upgrade'
@@ -281,12 +314,15 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/admin'
     | '/auth'
     | '/chat'
+    | '/contact'
     | '/enterprise-ai-data'
     | '/marketplace'
     | '/profile'
+    | '/resources'
     | '/students'
     | '/support'
     | '/upgrade'
@@ -307,12 +343,15 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
+  ContactRoute: typeof ContactRoute
   EnterpriseAiDataRoute: typeof EnterpriseAiDataRoute
   MarketplaceRoute: typeof MarketplaceRoute
   ProfileRoute: typeof ProfileRoute
+  ResourcesRoute: typeof ResourcesRoute
   StudentsRoute: typeof StudentsRoute
   SupportRoute: typeof SupportRoute
   UpgradeRoute: typeof UpgradeRoute
@@ -339,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -360,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/enterprise-ai-data': {
       id: '/enterprise-ai-data'
       path: '/enterprise-ai-data'
@@ -379,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/students': {
@@ -508,12 +568,15 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
+  ContactRoute: ContactRoute,
   EnterpriseAiDataRoute: EnterpriseAiDataRoute,
   MarketplaceRoute: MarketplaceRoute,
   ProfileRoute: ProfileRoute,
+  ResourcesRoute: ResourcesRoute,
   StudentsRoute: StudentsRoute,
   SupportRoute: SupportRoute,
   UpgradeRoute: UpgradeRoute,

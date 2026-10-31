@@ -3,7 +3,7 @@ import { PublicBrandPage } from "@/components/public-brand-page";
 import { publicPageHead } from "@/lib/public-page-seo";
 
 const description =
-  "NesAI plans and runs human-led AI data generation, annotation, RLHF and model evaluation for enterprise teams.";
+  "NesAI helps enterprise AI teams create training data, annotate text, image, audio and video, and evaluate models with human experts.";
 
 export const Route = createFileRoute("/enterprise-ai-data")({
   head: () => publicPageHead("Enterprise AI Data Services | NesAI", description, "/enterprise-ai-data"),

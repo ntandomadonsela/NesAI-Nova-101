@@ -3,10 +3,10 @@ import { PublicBrandPage } from "@/components/public-brand-page";
 import { publicPageHead } from "@/lib/public-page-seo";
 
 const description =
-  "Explore NesAI Marketplace, a human-data platform for enterprise projects and qualified contributors.";
+  "Explore NesAI’s human-led AI data services for enterprise teams, including data annotation, transcription, RLHF, and model evaluation.";
 
 export const Route = createFileRoute("/marketplace")({
-  head: () => publicPageHead("NesAI Marketplace | Human Data for AI", description, "/marketplace"),
+  head: () => publicPageHead("NesAI AI Data Marketplace | Annotation and Evaluation", description, "/marketplace"),
   component: MarketplacePage,
 });
 
@@ -15,7 +15,7 @@ function MarketplacePage() {
     <PublicBrandPage
       content={{
         eyebrow: "NESAI MARKETPLACE",
-        title: "A marketplace for human-led AI work.",
+        title: "Human-led AI data services for enterprise teams.",
         introduction:
           "NesAI Marketplace connects enterprise data projects with contributors whose experience fits the work. Projects can cover data collection, annotation, model feedback and evaluation.",
         callToAction: {

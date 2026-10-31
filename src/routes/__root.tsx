@@ -84,18 +84,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NesAI | Human-led data for AI teams" },
+      { title: "NesAI | AI Study Copilot and Human-Led AI Data" },
       {
         name: "description",
         content:
-          "NesAI helps AI teams create, review and evaluate training data with trained contributors and project-specific workflows.",
+          "NesAI supports South African students with an AI study copilot and academic resources, and helps AI teams source human-led data and model evaluation.",
       },
       { name: "author", content: "NesAI" },
       { property: "og:site_name", content: "NesAI" },
-      { property: "og:title", content: "NesAI | Human-led data for AI teams" },
+      { property: "og:title", content: "NesAI | AI Study Copilot and Human-Led AI Data" },
       {
         property: "og:description",
-        content: "Human-led training data, annotation and model evaluation for AI teams.",
+        content: "AI study support for South African students and human-led AI data services for enterprise teams.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "en_ZA" },

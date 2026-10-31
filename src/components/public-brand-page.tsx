@@ -26,11 +26,12 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
             <img src="/nesai-brand.png" alt="NesAI — Intelligence, Deployed at Scale" />
           </a>
           <nav className="corp-public-links" aria-label="NesAI sections">
+            <a href="/about">About NesAI</a>
+            <a href="/students">Academic Copilot</a>
+            <a href="/resources">Student Resources</a>
+            <a href="/marketplace">AI Data Marketplace</a>
             <a href="/enterprise-ai-data">Enterprise services</a>
-            <a href="/marketplace">Marketplace</a>
-            <a href="/students">Students</a>
-            <a href="/vault">The Vault</a>
-            <a className="corp-button corp-button-small" href="/#contact">
+            <a className="corp-button corp-button-small" href="/contact">
               Contact NesAI <ArrowRight size={14} />
             </a>
           </nav>
@@ -97,11 +98,12 @@ export function PublicBrandPage({ content }: { content: PublicBrandPageContent }
             <p>Human intelligence for better AI.</p>
             <div className="corp-footer-links">
               <a href="/enterprise-ai-data">Enterprise AI data</a>
-              <a href="/marketplace">NesAI Marketplace</a>
-              <a href="/students">NesAI for students</a>
+              <a href="/marketplace">NesAI AI Data Marketplace</a>
+              <a href="/students">NesAI Academic Copilot</a>
+              <a href="/resources">Student resources</a>
               <a href="/vault">The Vault</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor sign-in</a>
-              <a href="/#contact">Contact NesAI</a>
+              <a href="/contact">Contact NesAI</a>
             </div>
           </div>
           <div className="corp-footer-bottom">

@@ -152,33 +152,14 @@ export function CorporateHome() {
             {menuOpen ? <X /> : <Menu />}
           </button>
           <nav id="primary-navigation" className={menuOpen ? "corp-links open" : "corp-links"}>
-            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>
-              Enterprise services
-            </a>
-            <a href="#workflow" onClick={() => setMenuOpen(false)}>
-              How we work
-            </a>
-            <a href="#ecosystem" onClick={() => setMenuOpen(false)}>
-              Our ecosystem
-            </a>
-            <a href="/marketplace">
-              Marketplace <ArrowDownRight size={13} />
-            </a>
-            <a href="/students" onClick={() => setMenuOpen(false)}>
-              Students
-            </a>
+            <a href="/about" onClick={() => setMenuOpen(false)}>About NesAI</a>
+            <a href="/students" onClick={() => setMenuOpen(false)}>Academic Copilot</a>
+            <a href="/resources" onClick={() => setMenuOpen(false)}>Student Resources</a>
+            <a href="/marketplace" onClick={() => setMenuOpen(false)}>AI Data Marketplace</a>
+            <a href="/enterprise-ai-data" onClick={() => setMenuOpen(false)}>Enterprise services</a>
             <div className="corp-nav-ctas">
-              <a className="corp-portal-link" href="/students">
-                <GraduationCap size={15} /> Student portal
-              </a>
-              <a
-                className="corp-annotator-link"
-                href="https://marketplace.nesai.co.za/?workspace=talent"
-              >
-                Annotator sign-up
-              </a>
-              <a className="corp-button corp-button-small" href="#contact">
-                Request a demo <ArrowRight size={14} />
+              <a className="corp-button corp-button-small" href="/contact">
+                Contact NesAI <ArrowRight size={14} />
               </a>
             </div>
           </nav>
@@ -191,23 +172,23 @@ export function CorporateHome() {
           <div className="corp-container corp-hero-grid">
             <div className="corp-hero-copy">
               <div className="corp-eyebrow">
-                <span /> DATA OPERATIONS FOR AI TEAMS
+                <span /> EDUCATION &amp; AI DATA OPERATIONS
               </div>
               <h1>
-                Human-led data.
+                AI support for study.
                 <br />
-                <em>Built for AI.</em>
+                <em>Human-led data for AI.</em>
               </h1>
               <p className="corp-hero-lead">
-                NesAI helps teams create, review and evaluate the data behind AI systems, with
-                trained contributors and workflows shaped around the work.
+                NesAI gives South African students an AI study copilot and academic resources, and
+                helps enterprise teams create and evaluate high-quality data with trained contributors.
               </p>
               <div className="corp-hero-actions">
-                <a href="#contact" className="corp-button">
-                  Talk to our team <ArrowRight size={16} />
+                <a href="/students" className="corp-button">
+                  Explore the Academic Copilot <ArrowRight size={16} />
                 </a>
-                <a href="#workflow" className="corp-text-link">
-                  See how we work <ArrowDownRight size={16} />
+                <a href="/marketplace" className="corp-text-link">
+                  Explore the AI Data Marketplace <ArrowDownRight size={16} />
                 </a>
               </div>
               <div className="corp-hero-foot">
@@ -1034,11 +1015,13 @@ export function CorporateHome() {
             <p>Human intelligence for better AI.</p>
             <div className="corp-footer-links">
               <a href="/enterprise-ai-data">Enterprise AI data</a>
-              <a href="/marketplace">Marketplace</a>
+              <a href="/marketplace">AI Data Marketplace</a>
               <a href="https://marketplace.nesai.co.za/?workspace=talent">Contributor portal</a>
-              <a href="/students">Students & academia</a>
+              <a href="/students">Academic Copilot</a>
+              <a href="/resources">Student Resources</a>
+              <a href="/about">About NesAI</a>
               <a href="/vault">The Vault</a>
-              <a href="#contact">Enterprise contact</a>
+              <a href="/contact">Contact NesAI</a>
             </div>
           </div>
           <div className="corp-footer-bottom">
