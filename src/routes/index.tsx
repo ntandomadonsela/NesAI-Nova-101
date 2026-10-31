@@ -27,6 +27,7 @@ export const Route = createFileRoute("/")({
               "@id": "https://www.nesai.co.za/#organization",
               name: "NesAI",
               alternateName: "NesAI Nova",
+              sameAs: ["https://www.nesmaholdings.co.za/nesai-nova"],
               url: "https://www.nesai.co.za/",
               description: "NesAI is the education technology and AI data operations brand of Nesma Holdings.",
               logo: {
